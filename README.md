@@ -7,9 +7,10 @@ Store your ember application data in [Mozilla's localForage](https://github.com/
 
 It is supported by all major browsers, including mobile.
 
+/!\ THIS IS VERY EARLY STAGE /!\
+
 [![Build Status](https://travis-ci.org/tchak/ember-offline-adapter.png?branch=master)](https://travis-ci.org/tchak/ember-offline-adapter)
 [![npm version](https://badge.fury.io/js/ember-offline-adapter.svg)](http://badge.fury.io/js/ember-offline-adapter)
-[![Bower version](https://badge.fury.io/bo/ember-offline-adapter.svg)](http://badge.fury.io/bo/ember-offline-adapter)
 [![Ember Observer Score](http://emberobserver.com/badges/ember-offline-adapter.svg)](http://emberobserver.com/addons/ember-offline-adapter)
 
 Usage
