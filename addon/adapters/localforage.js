@@ -190,10 +190,18 @@ export default JSONAPIAdapter.extend({
     });
   },
 
-  localUpdateRecord(store, type, snapshot) {
-    if (isFastBoot) { return RSVP.resolve(); }
-
+  localCreateRecord(store, type, snapshot) {
     let { data } = this.serializeRecord(store, type, snapshot);
+
+    if (isFastBoot) { return RSVP.resolve({ data }); }
+
+    return this.save(type, data);
+  },
+
+  localUpdateRecord(store, type, snapshot) {
+    let { data } = this.serializeRecord(store, type, snapshot);
+
+    if (isFastBoot) { return RSVP.resolve({ data }); }
 
     return this.save(type, data);
   },
@@ -282,7 +290,7 @@ export default JSONAPIAdapter.extend({
       }
     } finally {
       /* eslint-disable no-unsafe-finally */
-      return this.localUpdateRecord(...arguments);
+      return this.localCreateRecord(...arguments);
       /* eslint-enable no-unsafe-finally */
     }
   },
