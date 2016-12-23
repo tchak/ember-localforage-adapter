@@ -1,17 +1,17 @@
 export default {
   'subscriber': {
-    records: {
-      'externalS1': {
-        id: 'externalS1',
+    'externalS1': {
+      id: 'externalS1',
+      attributes: {
         name: 'John'
       }
     }
   },
 
   'author': {
-    records: {
-      'externalA1': {
-        id: 'externalA1',
+    'externalA1': {
+      id: 'externalA1',
+      attributes: {
         name: 'Jane'
       }
     }

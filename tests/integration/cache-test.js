@@ -1,39 +1,24 @@
 import Ember from 'ember';
-import {module, test} from 'qunit';
-import startApp from '../helpers/start-app';
-import destroyApp from '../helpers/destroy-app';
+import { moduleFor, test } from 'ember-qunit';
 import FIXTURES from '../helpers/fixtures/crud';
-import MOCK_FIXTURES from '../helpers/fixtures/mock';
+import loadFixtures from '../helpers/load-fixtures';
 
-var App;
 var store;
 var adapter;
-var run = Ember.run;
-var get = Ember.get;
-var proto = Object.prototype;
-var gpo = Object.getPrototypeOf;
 
-module("Cache integration", {
-  beforeEach: function(assert) {
-    let done = assert.async();
-    run(function() {
-      window.localforage.setItem('DS.LFAdapter', FIXTURES).then(function() {
-        window.localforage.setItem('MockAdapter', MOCK_FIXTURES).then(function() {
-          done();
-        });
-      });
-    });
+const { run, get } = Ember;
+const proto = Object.prototype;
+const gpo = Object.getPrototypeOf;
 
-    run(function() {
-      App = startApp();
-      store = App.__container__.lookup('service:store');
-      adapter = App.__container__.lookup('adapter:application');
-      adapter.get('cache').clear();
-    });
-  },
+moduleFor('service:store', "Cache", {
+  integration: true,
 
-  afterEach: function() {
-    destroyApp(App);
+  async beforeEach() {
+    store = this.subject();
+    adapter = store.adapterFor('default');
+
+    await adapter.clearAll();
+    await loadFixtures(FIXTURES);
   }
 });
 
@@ -49,42 +34,38 @@ function isPojo(obj) {
   return gpo(obj) === proto;
 }
 
-test("cache should be unbound data", function(assert) {
+test("cache should be unbound data", async function(assert) {
   assert.expect(13);
 
-  let done = assert.async();
-  run(function() {
-    store.findAll('list').then(function(records) {
-      var listCache;
-      var firstRecord = records.objectAt(0);
-      var secondRecord = records.objectAt(1);
-      var thirdRecord = records.objectAt(2);
+  let records = await run(() => store.findAll('list'));
+  let listCache;
+  let firstRecord = records.objectAt(0);
+  let secondRecord = records.objectAt(1);
+  let thirdRecord = records.objectAt(2);
 
-      assert.equal(get(records, 'length'), 3, "3 items were found");
+  assert.equal(get(records, 'length'), 3, "3 items were found");
 
-      assert.equal(get(firstRecord, 'name'), "one", "First item's name is one");
-      assert.equal(get(secondRecord, 'name'), "two", "Second item's name is two");
-      assert.equal(get(thirdRecord, 'name'), "three", "Third item's name is three");
+  assert.equal(get(firstRecord, 'name'), "one", "First item's name is one");
+  assert.equal(get(secondRecord, 'name'), "two", "Second item's name is two");
+  assert.equal(get(thirdRecord, 'name'), "three", "Third item's name is three");
 
-      assert.equal(get(firstRecord, 'day'), 1, "First item's day is 1");
-      assert.equal(get(secondRecord, 'day'), 2, "Second item's day is 2");
-      assert.equal(get(thirdRecord, 'day'), 3, "Third item's day is 3");
+  assert.equal(get(firstRecord, 'day'), 1, "First item's day is 1");
+  assert.equal(get(secondRecord, 'day'), 2, "Second item's day is 2");
+  assert.equal(get(thirdRecord, 'day'), 3, "Third item's day is 3");
 
-      listCache = adapter.get('cache').get('list');
-      assert.equal(isPojo(listCache), true);
-      assert.equal(listCache.records[get(firstRecord, 'id')].name, 'one');
+  listCache = adapter.get('cache').get('list');
+  assert.equal(isPojo(listCache), true, 'should have cache');
+  assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'one');
 
-      firstRecord.set('name', 'two');
-      listCache = adapter.get('cache').get('list');
-      assert.equal(isPojo(listCache), true);
-      assert.equal(listCache.records[get(firstRecord, 'id')].name, 'one');
+  run(() => firstRecord.set('name', 'two'));
 
-      firstRecord.save().then(function () {
-        listCache = adapter.get('cache').get('list');
-        assert.equal(isPojo(listCache), true);
-        assert.equal(listCache.records[get(firstRecord, 'id')].name, 'two');
-        done();
-      });
-    });
-  });
+  listCache = adapter.get('cache').get('list');
+  assert.equal(isPojo(listCache), true);
+  assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'one');
+
+  await run(() => firstRecord.save());
+
+  listCache = adapter.get('cache').get('list');
+  assert.equal(isPojo(listCache), true);
+  assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'two');
 });

@@ -1,658 +1,370 @@
 import Ember from 'ember';
-import {module, test} from 'qunit';
-import startApp from '../helpers/start-app';
-import destroyApp from '../helpers/destroy-app';
+import { moduleFor, test } from 'ember-qunit';
+import uuid from 'uuid';
 import FIXTURES from '../helpers/fixtures/crud';
 import MOCK_FIXTURES from '../helpers/fixtures/mock';
+import loadFixtures from '../helpers/load-fixtures';
 
-var App;
 var store;
-var adapter;
-var run = Ember.run;
-var get = Ember.get;
+const { run, get } = Ember;
 
-module("CRUD", {
-  beforeEach: function(assert) {
-    let done = assert.async();
-    run(function() {
-      window.localforage.setItem('DS.LFAdapter', FIXTURES).then(function() {
-        window.localforage.setItem('MockAdapter', MOCK_FIXTURES).then(function() {
-          done();
-        });
-      });
-    });
+moduleFor('service:store', "CRUD", {
+  integration: true,
 
-    run(function() {
-      App = startApp();
-      store = App.__container__.lookup('service:store');
-      adapter = App.__container__.lookup('adapter:application');
-      adapter.get('cache').clear();
-    });
-  },
+  async beforeEach() {
+    store = this.subject();
 
-  afterEach: function() {
-    destroyApp(App);
+    //await adapter.clearAll();
+    await loadFixtures(FIXTURES);
+    await loadFixtures(MOCK_FIXTURES, 'MockAdapter');
   }
 });
 
 // Lifecycle methods
 // -----------------------------------------------------------------------------
 
-test("push", function(assert) {
+test("push", async function(assert) {
   assert.expect(3);
-  let done = assert.async();
 
-  run(function() {
-    var list = store.push({
-      data: {
-        type: 'list',
-        id: adapter.generateIdForRecord(),
-        attributes: {
-          name: 'Rambo'
-        }
+  let list = run(() => store.push({
+    data: {
+      type: 'list',
+      id: uuid(),
+      attributes: {
+        name: 'Rambo'
       }
-    });
+    }
+  }));
 
-    list.save().then(function() {
-      return store.query('list', {
-        name: 'Rambo'
-      });
-    }).then(function(records) {
-      var record = records.objectAt(0);
-      assert.equal(get(records, 'length'), 1, "Only Rambo was found");
-      assert.equal(get(record, 'name'), "Rambo", "Correct name");
-      assert.equal(get(record, 'id'), list.id, "Correct, original id");
-      done();
-    });
-  });
+  await run(() => list.save());
+  let records = await run(() => store.query('list', { name: 'Rambo' }));
+  let record = records.objectAt(0);
+
+  assert.equal(get(records, 'length'), 1, "Only Rambo was found");
+  assert.equal(get(record, 'name'), "Rambo", "Correct name");
+  assert.equal(get(record, 'id'), list.id, "Correct, original id");
 });
 
-test("createRecord", function(assert) {
+test("createRecord", async function(assert) {
   assert.expect(3);
-  let done = assert.async();
 
-  run(function() {
-    var list = store.createRecord('list', {
-      name: 'Rambo'
-    });
+  let list = run(() => store.createRecord('list', { name: 'Rambo' }));
+  await run(() => list.save());
 
-    list.save().then(function() {
-      return store.query('list', {
-        name: 'Rambo'
-      });
-    }).then(function(records) {
-      var record = records.objectAt(0);
-      assert.equal(get(records, 'length'), 1, "Only Rambo was found");
-      assert.equal(get(record, 'name'), "Rambo", "Correct name");
-      assert.equal(get(record, 'id'), list.id, "Correct, original id");
-      done();
-    });
-  });
+  let records = await store.query('list', { name: 'Rambo' });
+  let record = records.objectAt(0);
+
+  assert.equal(get(records, 'length'), 1, "Only Rambo was found");
+  assert.equal(get(record, 'name'), "Rambo", "Correct name");
+  assert.equal(get(record, 'id'), list.id, "Correct, original id");
 });
 
-test("updateRecord", function(assert) {
+test("updateRecord", async function(assert) {
   assert.expect(3);
-  let done = assert.async();
 
-  run(function() {
-    var list = store.createRecord('list', {
-      name: 'Rambo'
-    });
+  let list = run(() => store.createRecord('list', { name: 'Rambo' }));
+  await run(() => list.save());
 
-    var UpdateList = function() {
-      return store.query('list', {
-        name: 'Rambo'
-      }).then(function(records) {
-        var record = records.objectAt(0);
-        record.set('name', 'Macgyver');
-        return record.save();
-      });
-    };
+  let records = await store.query('list', { name: 'Rambo' });
+  let record = records.objectAt(0);
+  run(() => record.set('name', 'Macgyver'));
+  await run(() => record.save());
 
-    var AssertListIsUpdated = function() {
-      return store.query('list', {
-        name: 'Macgyver'
-      }).then(function(records) {
-        var record = records.objectAt(0);
-        assert.equal(get(records, 'length'), 1, "Only one record was found");
-        assert.equal(get(record, 'name'), "Macgyver", "Updated name shows up");
-        assert.equal(get(record, 'id'), list.id, "Correct, original id");
-        done();
-      });
-    };
+  records = await store.query('list', { name: 'Macgyver' });
+  record = records.objectAt(0);
 
-    list.save().then(UpdateList).then(AssertListIsUpdated);
-  });
+  assert.equal(get(records, 'length'), 1, "Only one record was found");
+  assert.equal(get(record, 'name'), "Macgyver", "Updated name shows up");
+  assert.equal(get(record, 'id'), list.id, "Correct, original id");
 });
 
-test("deleteRecord", function(assert) {
+test("destroyRecord", async function(assert) {
   assert.expect(2);
-  let done = assert.async();
 
-  run(function() {
-    var AssertListIsDeleted = function() {
-      return store.query('list', {
-        name: 'one'
-      }).then(function(records) {
-        assert.equal(get(records, 'length'), 0, "No record was found");
-        done();
-      });
-    };
+  let lists = await run(() => store.query('list', { name: 'one' }));
+  let list = lists.objectAt(0);
 
-    store.query('list', {
-      name: 'one'
-    }).then(function(lists) {
-      var list = lists.objectAt(0);
-      assert.equal(get(list, "id"), "l1", "Item exists");
-      list.deleteRecord();
-      list.on("didDelete", AssertListIsDeleted);
-      list.save();
-    });
-  });
+  assert.equal(get(list, "id"), "l1", "Item exists");
+
+  await run(() => list.destroyRecord());
+  lists = await store.query('list', { name: 'one' });
+
+  assert.equal(get(lists, 'length'), 0, "No record was found");
 });
 
 // Find methods
 // -----------------------------------------------------------------------------
 
-test("findAll", function(assert) {
+test("findAll", async function(assert) {
   assert.expect(7);
 
-  let done = assert.async();
-  run(function() {
-    store.findAll('list').then(function(records) {
-      var firstRecord = records.objectAt(0);
-      var secondRecord = records.objectAt(1);
-      var thirdRecord = records.objectAt(2);
+  let records = await run(() => store.findAll('list'));
+  let firstRecord = records.objectAt(0);
+  let secondRecord = records.objectAt(1);
+  let thirdRecord = records.objectAt(2);
 
-      assert.equal(get(records, 'length'), 3, "3 items were found");
+  assert.equal(get(records, 'length'), 3, "3 items were found");
 
-      assert.equal(get(firstRecord, 'name'), "one", "First item's name is one");
-      assert.equal(get(secondRecord, 'name'), "two", "Second item's name is two");
-      assert.equal(get(thirdRecord, 'name'), "three", "Third item's name is three");
+  assert.equal(get(firstRecord, 'name'), "one", "First item's name is one");
+  assert.equal(get(secondRecord, 'name'), "two", "Second item's name is two");
+  assert.equal(get(thirdRecord, 'name'), "three", "Third item's name is three");
 
-      assert.equal(get(firstRecord, 'day'), 1, "First item's day is 1");
-      assert.equal(get(secondRecord, 'day'), 2, "Second item's day is 2");
-      assert.equal(get(thirdRecord, 'day'), 3, "Third item's day is 3");
-
-      done();
-    });
-  });
+  assert.equal(get(firstRecord, 'day'), 1, "First item's day is 1");
+  assert.equal(get(secondRecord, 'day'), 2, "Second item's day is 2");
+  assert.equal(get(thirdRecord, 'day'), 3, "Third item's day is 3");
 });
 
-test("findRecord", function(assert) {
+test("findRecord", async function(assert) {
   assert.expect(4);
 
-  let done = assert.async();
-  run(function() {
-    store.findRecord('list', 'l1').then(function(list) {
-      assert.equal(get(list, 'id'), 'l1', "id is loaded correctly");
-      assert.equal(get(list, 'name'), 'one', "name is loaded correctly");
-      assert.equal(get(list, 'b'), true, "b is loaded correctly");
-      assert.equal(get(list, 'day'), 1, "day is loaded correctly");
-      done();
-    });
-  });
+  let list = await run(() => store.findRecord('list', 'l1'));
+
+  assert.equal(get(list, 'id'), 'l1', "id is loaded correctly");
+  assert.equal(get(list, 'name'), 'one', "name is loaded correctly");
+  assert.equal(get(list, 'b'), true, "b is loaded correctly");
+  assert.equal(get(list, 'day'), 1, "day is loaded correctly");
 });
 
 // Query methods
 // -----------------------------------------------------------------------------
 
-test("query", function(assert) {
+test("query", async function(assert) {
   assert.expect(7);
 
-  let done1 = assert.async();
-  run(function() {
-    store.query('list', {
-      name: /one|two/
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 2, "found results for /one|two/");
-      done1();
-    });
-  });
+  let records = await run(() => store.query('list', { name: /one|two/ }));
+  assert.equal(get(records, 'length'), 2, "found results for /one|two/");
 
-  let done2 = assert.async();
-  run(function() {
-    store.query('list', {
-      name: /.+/,
-      id: /l1/
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 1, "found results for { name: /.+/, id: /l1/ }");
-      done2();
-    });
-  });
+  records = await run(() => store.query('list', { name: /.+/, id: /l1/ }));
+  assert.equal(get(records, 'length'), 1, "found results for { name: /.+/, id: /l1/ }");
 
-  let done3 = assert.async();
-  run(function() {
-    store.query('list', {
-      name: 'one'
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 1, "found results for name 'one'");
-      done3();
-    });
-  });
+  records = await run(() => store.query('list', { name: 'one' }));
+  assert.equal(get(records, 'length'), 1, "found results for name 'one'");
 
-  let done4 = assert.async();
-  run(function() {
-    store.query('list', {
-      b: true
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 1, "found results for { b: true }");
-      done4();
-    });
-  });
+  records = await run(() => store.query('list', { b: true }));
+  assert.equal(get(records, 'length'), 1, "found results for { b: true }");
 
-  let done5 = assert.async();
-  run(function() {
-    store.query('list', {
-      name: 'two',
-      b: false
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 1, "found results for multiple criteria");
-      done5();
-    });
-  });
+  records = await run(() => store.query('list', { name: 'two', b: false }));
+  assert.equal(get(records, 'length'), 1, "found results for multiple criteria");
 
-  let done6 = assert.async();
-  run(function() {
-    store.query('list', {
-      name: 'four',
-      b: false
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 0, "found no results when only criteria matches");
-      done6();
-    });
-  });
+  records = await run(() => store.query('list', { name: 'four', b: false }));
+  assert.equal(get(records, 'length'), 0, "found no results when only criteria matches");
 
-  let done7 = assert.async();
-  run(function() {
-    store.query('list', {
-      whatever: "dude"
-    }).then(function(records) {
-      assert.equal(get(records, 'length'), 0, "didn't find results for nonsense");
-      done7();
-    });
-  });
+  records = await run(() => store.query('list', { whatever: "dude" }));
+  assert.equal(get(records, 'length'), 0, "didn't find results for nonsense");
 });
 
-test("queryRecord", function(assert) {
+test("queryRecord", async function(assert) {
   assert.expect(5);
 
-  let done1 = assert.async();
-  run(function() {
-    store.queryRecord('list', {
-      name: 'two'
-    }).then(function(list) {
-      assert.equal(get(list, 'id'), 'l2', "id is loaded correctly");
-      assert.equal(get(list, 'name'), 'two', "name is loaded correctly");
-      assert.equal(get(list, 'b'), false, "b is loaded correctly");
-      assert.equal(get(list, 'day'), 2, "day is loaded correctly");
-      done1();
-    });
-  });
+  let list = await store.queryRecord('list', { name: 'two' });
 
-  let done2 = assert.async();
-  run(function() {
-    store.queryRecord('list', {
-      whatever: "dude"
-    }).catch(function() {
-      assert.ok(true, "didn't find record for nonsense");
-      done2();
-    });
-  });
+  assert.equal(get(list, 'id'), 'l2', "id is loaded correctly");
+  assert.equal(get(list, 'name'), 'two', "name is loaded correctly");
+  assert.equal(get(list, 'b'), false, "b is loaded correctly");
+  assert.equal(get(list, 'day'), 2, "day is loaded correctly");
+
+  try {
+    await store.queryRecord('list', { whatever: "dude" });
+  } catch(e) {
+    assert.ok(true, "didn't find record for nonsense");
+  }
 });
 
 // Relationship loading
 //------------------------------------------------------------------------------
 
-function assertionsForHasManyRelationships(assert, done, items) {
+function assertionsForHasManyRelationships(assert, items) {
   assert.expect(4);
-  var item1 = items.get('firstObject');
-  var item2 = items.get('lastObject');
+  let item1 = items.get('firstObject');
+  let item2 = items.get('lastObject');
   assert.equal(get(item1, 'id'), 'i1', "first item id is loaded correctly");
   assert.equal(get(item1, 'name'), 'one', "first item name is loaded correctly");
   assert.equal(get(item2, 'id'), 'i2', "first item id is loaded correctly");
   assert.equal(get(item2, 'name'), 'two', "first item name is loaded correctly");
-  done();
 }
 
-test("load hasMany relationships when finding a single record", function(assert) {
-  let done = assert.async();
+test("load hasMany relationships when finding a single record", async function(assert) {
+  let list = await run(() => store.findRecord('list', 'l1'));
+  let items = await run(() => list.get('items'));
 
-  run(function() {
-    store.findRecord('list', 'l1').then(function(list) {
-      list.get('items').then(function(items) {
-        assertionsForHasManyRelationships(assert, done, items);
-      });
-    });
-  });
-});
-test("load hasMany relationships when finding multiple records", function(assert) {
-  let done = assert.async();
-
-  run(function() {
-    store.findAll('list').then(function(lists) {
-      lists.get('firstObject.items').then(function(items) {
-        assertionsForHasManyRelationships(assert, done, items);
-      });
-    });
-  });
+  assertionsForHasManyRelationships(assert, items);
 });
 
-function assertionsForMissingHasManyRelationships(assert, done, post) {
+test("load hasMany relationships when finding multiple records", async function(assert) {
+  let lists = await run(() => store.findAll('list'));
+  let items = await run(() => lists.get('firstObject.items'));
+
+  assertionsForHasManyRelationships(assert, items);
+});
+
+async function assertionsForMissingHasManyRelationships(assert, post) {
   assert.expect(2);
-  var p1 = post.get('comments').catch(function() {
+
+  try {
+    await post.get('comments');
+  } catch(e) {
     assert.ok(true, "Missing comments prevent all comments from being loaded");
-  });
-  var p2 = post.get('subscribers').catch(function() {
+  }
+
+  try {
+    await post.get('subscribers');
+  } catch(e) {
     assert.ok(true, "Missing external subscribers prevent all comments from being loaded");
-  });
-  Ember.RSVP.all([p1, p2]).then(function() {
-    done();
-  });
+  }
 }
 
-test("load with missing hasMany relationships when finding a single record", function(assert) {
-  let done = assert.async();
+test("load with missing hasMany relationships when finding a single record", async function(assert) {
+  let post = await run(() => store.findRecord('post', 'p1'));
 
-  run(function() {
-    store.findRecord('post', 'p1').then(function(post) {
-      assertionsForMissingHasManyRelationships(assert, done, post);
-    });
-  });
+  await assertionsForMissingHasManyRelationships(assert, post);
 });
 
-test("load with missing hasMany relationships when finding multiple records", function(assert) {
-  let done = assert.async();
+test("load with missing hasMany relationships when finding multiple records", async function(assert) {
+  let posts = await run(() => store.findAll('post'));
 
-  run(function() {
-    store.findAll('post').then(function(posts) {
-      assertionsForMissingHasManyRelationships(assert, done, posts.get('firstObject'));
-    });
-  });
+  await assertionsForMissingHasManyRelationships(assert, posts.get('firstObject'));
 });
 
-function assertionsForBelongsToRelationships(assert, done, list) {
+function assertionsForBelongsToRelationships(assert, list) {
   assert.equal(get(list, 'id'), 'l1', "id is loaded correctly");
   assert.equal(get(list, 'name'), 'one', "name is loaded correctly");
-  done();
 }
 
-test("load belongsTo relationships when finding a single record", function(assert) {
-  let done = assert.async();
-  run(function() {
-    store.findRecord('item', 'i1').then(function(item) {
-      item.get('list').then(function(list) {
-        assertionsForBelongsToRelationships(assert, done, list);
-      });
-    });
-  });
+test("load belongsTo relationships when finding a single record", async function(assert) {
+  let item = await run(() => store.findRecord('item', 'i1'));
+  let list = await run(() => item.get('list'));
+
+  assertionsForBelongsToRelationships(assert, list);
 });
 
-test("load belongsTo relationships when finding multiple records", function(assert) {
-  let done = assert.async();
+test("load belongsTo relationships when finding multiple records", async function(assert) {
+  let items = await run(() => store.findAll('item'));
+  let list = await run(() => items.get('firstObject.list'));
 
-  run(function() {
-    store.findAll('item').then(function(items) {
-      items.get('firstObject.list').then(function(list) {
-        assertionsForBelongsToRelationships(assert, done, list);
-      });
-    });
-  });
+  assertionsForBelongsToRelationships(assert, list);
 });
 
-test("load with missing belongsTo relationships when finding a single record", function(assert) {
-  assert.expect(2);
-  let done = assert.async();
-
-  run(function() {
-    var p1 = store.findRecord('comment', 'c2').then(function(comment) {
-      return comment.get('post').catch(function() {
-        assert.ok(true, "Related post can\'t be resolved");
-      });
-    });
-    var p2 = store.findRecord('comment', 'c4').then(function(comment) {
-      return comment.get('author').catch(function() {
-        assert.ok(true, "External related author can\'t be resolved");
-      });
-    });
-    Ember.RSVP.all([p1, p2]).then(function() {
-      done();
-    });
-  });
-});
-
-test("load with missing belongsTo relationships when finding multiple records", function(assert) {
-  assert.expect(2);
-  let done = assert.async();
-
-  run(function() {
-    store.findAll('comment').then(function(comments) {
-      var p1 = comments.objectAt(1).get('post').catch(function() {
-        assert.ok(true, "Related post can\'t be resolved");
-      });
-      var p2 = comments.objectAt(3).get('author').catch(function() {
-        assert.ok(true, "External related author can\'t be resolved");
-      });
-      Ember.RSVP.all([p1, p2]).then(function() {
-        done();
-      });
-    });
-  });
-});
-
-test("load embedded hasMany relationships when finding a single record", function(assert) {
-  assert.expect(5);
-
-  let done = assert.async();
-
-  run(function() {
-    store.findRecord('customer', '1').then(function(customer) {
-      var addresses = customer.get('addresses');
-      assert.equal(addresses.length, 2);
-
-      var address1 = addresses.get('firstObject');
-      var address2 = addresses.get('lastObject');
-      assert.equal(get(address1, 'id'), '1',
-        "first address id is loaded correctly");
-      assert.equal(get(address1, 'addressNumber'), '12345',
-        "first address number is loaded correctly");
-      assert.equal(get(address2, 'id'), '2',
-        "first address id is loaded correctly");
-      assert.equal(get(address2, 'addressNumber'), '54321',
-        "first address number is loaded correctly");
-
-      done();
-    });
-  });
-});
-
-test("load embedded hasMany relationships when finding multiple records", function(assert) {
-  assert.expect(6);
-
-  let done = assert.async();
-
-  run(function() {
-    store.findAll('customer').then(function(customers) {
-      assert.equal(get(customers, 'length'), 1, 'one customer was retrieved');
-
-      var customer = customers.objectAt(0);
-      var addresses = customer.get('addresses');
-      assert.equal(addresses.length, 2);
-
-      var address1 = addresses.get('firstObject');
-      var address2 = addresses.get('lastObject');
-      assert.equal(get(address1, 'id'), '1',
-        "first address id is loaded correctly");
-      assert.equal(get(address1, 'addressNumber'), '12345',
-        "first address number is loaded correctly");
-      assert.equal(get(address2, 'id'), '2',
-        "first address id is loaded correctly");
-      assert.equal(get(address2, 'addressNumber'), '54321',
-        "first address number is loaded correctly");
-
-      done();
-    });
-  });
-});
-
-test("load embedded hasMany relationships when querying multiple records", function(assert) {
-  assert.expect(6);
-
-  let done = assert.async();
-
-  run(function() {
-    store.query('customer', {
-      customerNumber: '123'
-    }).then(function(customers) {
-      assert.equal(get(customers, 'length'), 1);
-
-      var customer = customers.objectAt(0);
-      var addresses = customer.get('addresses');
-      assert.equal(addresses.length, 2);
-
-      var address1 = addresses.get('firstObject');
-      var address2 = addresses.get('lastObject');
-      assert.equal(get(address1, 'id'), '1',
-        "first address id is loaded correctly");
-      assert.equal(get(address1, 'addressNumber'), '12345',
-        "first address number is loaded correctly");
-      assert.equal(get(address2, 'id'), '2',
-        "first address id is loaded correctly");
-      assert.equal(get(address2, 'addressNumber'), '54321',
-        "first address number is loaded correctly");
-
-      done();
-    });
-  });
-});
-
-test("load embedded belongsTo relationships when finding a single record", function(assert) {
+test("load with missing belongsTo relationships when finding a single record", async function(assert) {
   assert.expect(2);
 
-  let done = assert.async();
+  let comment = await run(() => store.findRecord('comment', 'c2'));
 
-  run(function() {
-    store.findRecord('customer', '1').then(function(customer) {
-      var hour = customer.get('hour');
-      assert.equal(get(hour, 'id'), 'h5',
-        "hour id is loaded correctly");
-      assert.equal(get(hour, 'name'), 'five',
-        "hour name is loaded correctly");
+  try {
+    await comment.get('post');
+  } catch(e) {
+    assert.ok(true, "Related post can\'t be resolved");
+  }
 
-      done();
-    });
-  });
+  comment = await run(() => store.findRecord('comment', 'c4'));
+
+  try {
+    await comment.get('author');
+  } catch(e) {
+    assert.ok(true, "External related author can\'t be resolved");
+  }
 });
 
-test("load hasMany relationships when querying multiple records", function(assert) {
+test("load with missing belongsTo relationships when finding multiple records", async function(assert) {
+  assert.expect(2);
+
+  let comments = await run(() => store.findAll('comment'));
+
+  try {
+    await run(() => comments.objectAt(1).get('post'));
+  } catch(e) {
+    assert.ok(true, "Related post can\'t be resolved");
+  }
+
+  try {
+    await run(() => comments.objectAt(3).get('author'));
+  } catch(e) {
+    assert.ok(true, "External related author can\'t be resolved");
+  }
+});
+
+test("load hasMany relationships when querying multiple records", async function(assert) {
   assert.expect(11);
-  let done = assert.async();
-  run(function() {
-    store.query('order', {
-      b: true
-    }).then(function(records) {
-      var firstRecord = records.objectAt(0);
-      var secondRecord = records.objectAt(1);
-      var thirdRecord = records.objectAt(2);
-      assert.equal(get(records, 'length'), 3, "3 orders were found");
-      assert.equal(get(firstRecord, 'name'), "one", "First order's name is one");
-      assert.equal(get(secondRecord, 'name'), "three", "Second order's name is three");
-      assert.equal(get(thirdRecord, 'name'), "four", "Third order's name is four");
 
+  let records = await run(() => store.query('order', { b: true }));
+  let firstRecord = records.objectAt(0);
+  let secondRecord = records.objectAt(1);
+  let thirdRecord = records.objectAt(2);
 
-      Ember.RSVP.all([
-        firstRecord.get('hours'),
-        secondRecord.get('hours'),
-        thirdRecord.get('hours')
-      ]).then(function(hours) {
-        var firstHours = hours[0];
-        var secondHours = hours[1];
-        var thirdHours = hours[2];
-        assert.equal(get(firstHours, 'length'), 2, "Order one has two hours");
-        assert.equal(get(secondHours, 'length'), 2, "Order three has two hours");
-        assert.equal(get(thirdHours, 'length'), 0, "Order four has no hours");
+  assert.equal(get(records, 'length'), 3, "3 orders were found");
+  assert.equal(get(firstRecord, 'name'), "one", "First order's name is one");
+  assert.equal(get(secondRecord, 'name'), "three", "Second order's name is three");
+  assert.equal(get(thirdRecord, 'name'), "four", "Third order's name is four");
 
-        var hourOne = firstHours.objectAt(0);
-        var hourTwo = firstHours.objectAt(1);
-        var hourThree = secondHours.objectAt(0);
-        var hourFour = secondHours.objectAt(1);
-        assert.equal(get(hourOne, 'amount'), 4, "Hour one has amount of 4");
-        assert.equal(get(hourTwo, 'amount'), 3, "Hour two has amount of 3");
-        assert.equal(get(hourThree, 'amount'), 2, "Hour three has amount of 2");
-        assert.equal(get(hourFour, 'amount'), 1, "Hour four has amount of 1");
+  let [firstHours, secondHours, thirdHours] = await Ember.RSVP.all(run(() => [
+    firstRecord.get('hours'),
+    secondRecord.get('hours'),
+    thirdRecord.get('hours')
+  ]));
 
-        done();
-      });
-    });
-  });
+  assert.equal(get(firstHours, 'length'), 2, "Order one has two hours");
+  assert.equal(get(secondHours, 'length'), 2, "Order three has two hours");
+  assert.equal(get(thirdHours, 'length'), 0, "Order four has no hours");
+
+  let hourOne = firstHours.objectAt(0);
+  let hourTwo = firstHours.objectAt(1);
+  let hourThree = secondHours.objectAt(0);
+  let hourFour = secondHours.objectAt(1);
+
+  assert.equal(get(hourOne, 'amount'), 4, "Hour one has amount of 4");
+  assert.equal(get(hourTwo, 'amount'), 3, "Hour two has amount of 3");
+  assert.equal(get(hourThree, 'amount'), 2, "Hour three has amount of 2");
+  assert.equal(get(hourFour, 'amount'), 1, "Hour four has amount of 1");
 });
 
 // Relationship saving
 //------------------------------------------------------------------------------
 
-test("save belongsTo relationships", function(assert) {
-  var listId = 'l2';
+test("save belongsTo relationships", async function(assert) {
+  let listId = 'l2';
 
-  let done = assert.async();
-  run(function() {
-    store.findRecord('list', listId).then(function(list) {
-      var item = store.createRecord('item', {
-        name: 'three thousand'
-      });
-      item.set('list', list);
-      return item.save();
-    }).then(function(item) {
-      store.unloadAll('item');
-      return store.findRecord('item', item.get('id'));
-    }).then(function(item) {
-      item.get('list').then(function(list) {
-        assert.ok(item.get('list'), "list is present");
-        assert.equal(list.id, listId, "list is retrieved correctly");
-        done();
-      });
-    });
-  });
+  let list = await run(() => store.findRecord('list', listId));
+  let item = run(() => store.createRecord('item', { name: 'three thousand' }));
+  run(() => item.set('list', list));
+  await run(() => item.save());
+
+  run(() => store.unloadAll('item'));
+  item = await run(() => store.findRecord('item', item.get('id')));
+  list = await item.get('list');
+
+  assert.ok(item.get('list'), "list is present");
+  assert.equal(list.id, listId, "list is retrieved correctly");
 });
 
-test("save hasMany relationships", function(assert) {
-  var listId = 'l2';
+test("save hasMany relationships", async function(assert) {
+  let listId = 'l2';
 
-  let done = assert.async();
-  run(function() {
-    store.findRecord('list', listId).then(function(list) {
-      var item = store.createRecord('item', {
-        name: 'three thousand'
-      });
-      return list.get('items').then(function(items) {
-        items.pushObject(item);
-        return item.save().then(function() {
-          return list.save();
-        });
-      });
-    }).then(function() {
-      store.unloadAll('list');
-      return store.findRecord('list', listId);
-    }).then(function(list) {
-      list.get('items').then(function(items) {
-        var item1 = items.objectAt(0);
-        assert.equal(item1.get('name'), 'three thousand', "item is saved");
-        done();
-      });
-    });
-  });
+  let list = await run(() => store.findRecord('list', listId))
+  let item = run(() => store.createRecord('item', { name: 'three thousand' }));
+  let items = await run(() => list.get('items'));
+
+  run(() => items.pushObject(item));
+  await run(() => item.save());
+  await run(() => list.save());
+
+  run(() => store.unloadAll('list'));
+
+  list = await run(() => store.findRecord('list', listId));
+  items = await run(() => list.get('items'));
+  let item1 = items.objectAt(0);
+
+  assert.equal(item1.get('name'), 'three thousand', "item is saved");
 });
 
 // Bulk operations
 //------------------------------------------------------------------------------
 
-test("perform multiple changes in bulk", function(assert) {
-  const done = assert.async();
-  run(function() {
+test("perform multiple changes in bulk", async function(assert) {
+  assert.expect(3);
+  let promises = [];
 
-    let promises = [];
-
+  await run(async () => {
     promises.push(
-      store.findRecord('list', 'l1').then(function(list) {
+      store.findRecord('list', 'l1').then((list) => {
         list.set('name', 'updated');
         return list.save();
       })
@@ -663,17 +375,16 @@ test("perform multiple changes in bulk", function(assert) {
     );
 
     promises.push(
-      store.findRecord('list', 'l2').then(function(list) {
+      store.findRecord('list', 'l2').then((list) => {
         return list.destroyRecord();
       })
     );
 
-    Ember.RSVP.all(promises).then(function() {
-
+    await Ember.RSVP.all(promises).then(() => {
       promises = [];
 
       promises.push(
-        store.findRecord('list', 'l1').then(function(list) {
+        store.findRecord('list', 'l1').then((list) => {
           assert.equal(get(list, 'name'), 'updated', "Record was updated successfully");
         })
       );
@@ -681,20 +392,18 @@ test("perform multiple changes in bulk", function(assert) {
       promises.push(
         store.query('list', {
           name: 'Rambo'
-        }).then(function(lists) {
+        }).then((lists) => {
           assert.equal(get(lists, 'length'), 1, "Record was created successfully");
         })
       );
 
       promises.push(
-        store.findRecord('list', 'l2').catch(function() {
+        store.findRecord('list', 'l2').catch(() => {
           assert.ok(true, "Record was deleted successfully");
         })
       );
 
-      Ember.RSVP.all(promises).then(function() {
-        done();
-      });
+      return Ember.RSVP.all(promises);
     });
   });
 });

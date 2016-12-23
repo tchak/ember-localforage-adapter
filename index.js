@@ -3,9 +3,21 @@
 
 module.exports = {
   name: 'ember-localforage-adapter',
-  included: function included(app) {
-    this._super.included(app);
 
-    app.import(app.bowerDirectory + '/localforage/dist/localforage.js');
+  options: {
+    nodeAssets: {
+      localforage: {
+        import: [{
+          path: 'dist/localforage.js',
+          using: [{ transformation: 'amd', as: 'localforage' }]
+        }]
+      },
+      'node-uuid': {
+        import: [{
+          path: 'uuid.js',
+          using: [{ transformation: 'amd', as: 'uuid' }]
+        }]
+      }
+    }
   }
 };

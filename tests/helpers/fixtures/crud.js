@@ -1,68 +1,277 @@
 export default {
   'post': {
-    records: {
-      'p1': {
-        id: 'p1',
-        title: 'post #1',
-        comments: ['c1', 'missingComment'],
-        subscribers: ['externalS1', 'missingSubscriber']
+    'p1': {
+      id: 'p1',
+      type: 'post',
+      attributes: {
+        title: 'post #1'
+      },
+      relationships: {
+        comments: {
+          data: [
+            { id: 'c1', type: 'comment' },
+            { id: 'missingComment', type: 'comment' }
+          ]
+        },
+        subscribers: {
+          data: [
+            { id: 'externalS1', type: 'subscriber' },
+            { id: 'missingSubscriber', type: 'subscriber' }
+          ]
+        }
       }
     }
   },
 
   'comment': {
-    records: {
-      'c1': {id: 'c1', title: 'comment #1', post: 'p1' },
-      'c2': {id: 'c2', title: 'comment #2', post: 'missingPost'},
-      'c3': {id: 'c3', title: 'comment #3', post: 'p1', author: 'externalA1' },
-      'c4': {id: 'c4', title: 'comment #3', post: 'p1', author: 'missingAuthor' }
+    'c1': {
+      id: 'c1',
+      type: 'comment',
+      attributes: {
+        title: 'comment #1'
+      },
+      relationships: {
+        post: {
+          data: { id: 'p1', type: 'post' }
+        }
+      }
+    },
+    'c2': {
+      id: 'c2',
+      type: 'comment',
+      attributes: {
+        title: 'comment #2'
+      },
+      relationships: {
+        post: {
+          data: { id: 'missingPost', type: 'post' }
+        }
+      }
+    },
+    'c3': {
+      id: 'c3',
+      type: 'comment',
+      attributes: {
+        title: 'comment #3'
+      },
+      relationships: {
+        post: {
+          data: { id: 'p1', type: 'post' }
+        },
+        author: {
+          data: { id: 'externalA1', type: 'author' }
+        }
+      }
+    },
+    'c4': {
+      id: 'c4',
+      type: 'comment',
+      attributes: {
+        title: 'comment #3'
+      },
+      relationships: {
+        post: {
+          data: { id: 'p1', type: 'post' }
+        },
+        author: {
+          data: { id: 'missingAuthor', type: 'author' }
+        }
+      }
     }
   },
+
   'list': {
-    records: {
-      'l1': {id: 'l1', name: 'one', b: true, items: ['i1', 'i2'], day: 24},
-      'l2': {id: 'l2', name: 'two', b: false, items: [], day: 48},
-      'l3': {id: 'l3', name: 'three', b: false, items: [], day: 72}
+    'l1': {
+      id: 'l1',
+      type: 'list',
+      attributes: {
+        name: 'one',
+        b: true,
+        day: 24
+      },
+      relationships: {
+        items: {
+          data: [
+            { id: 'i1', type: 'item' },
+            { id: 'i2', type: 'item' }
+          ]
+        }
+      }
+    },
+    'l2': {
+      id: 'l2',
+      type: 'list',
+      attributes: {
+        name: 'two',
+        b: false,
+        day: 48
+      },
+      relationships: {
+        items: {
+          data: []
+        }
+      }
+    },
+    'l3': {
+      id: 'l3',
+      type: 'list',
+      attributes: {
+        name: 'three',
+        b: false,
+        day: 72
+      },
+      relationships: {
+        items: {
+          data: []
+        }
+      }
     }
   },
 
   'item': {
-    records: {
-      'i1': {id: 'i1', name: 'one', list: 'l1'},
-      'i2': {id: 'i2', name: 'two', list: 'l1'}
+    'i1': {
+      id: 'i1',
+      type: 'item',
+      attributes: {
+        name: 'one'
+      },
+      relationships: {
+        list: {
+          data: { id: 'l1', type: 'list' }
+        }
+      }
+    },
+    'i2': {
+      id: 'i2',
+      type: 'item',
+      attributes: {
+        name: 'two'
+      },
+      relationships: {
+        list: {
+          data: { id: 'l1', type: 'list' }
+        }
+      }
     }
   },
 
   'order': {
-    records: {
-      'o1': {id: 'o1', name: 'one', b: true, hours: ['h1', 'h2']},
-      'o2': {id: 'o2', name: 'two', b: false, hours: []},
-      'o3': {id: 'o3', name: 'three', b: true, hours: ['h3', 'h4']},
-      'o4': {id: 'o4', name: 'four', b: true, hours: []}
+    'o1': {
+      id: 'o1',
+      type: 'order',
+      attributes: {
+        name: 'one',
+        b: true
+      },
+      relationships: {
+        hours: {
+          data: [
+            { id:'h1', type: 'hour' },
+            { id:'h2', type: 'hour' }
+          ]
+        }
+      }
+    },
+    'o2': {
+      id: 'o2',
+      type: 'order',
+      attributes: {
+        name: 'two',
+        b: false
+      },
+      relationships:{
+        hours: {
+          data: []
+        }
+      }
+    },
+    'o3': {
+      id: 'o3',
+      type: 'order',
+      attributes: {
+        name: 'three',
+        b: true
+      },
+      relationships: {
+        hours: {
+          data: [
+            { id: 'h3', type: 'hour' },
+            { id: 'h4', type: 'hour' }
+          ]
+        }
+      }
+    },
+    'o4': {
+      id: 'o4',
+      type: 'order',
+      attributes: {
+        name: 'four',
+        b: true
+      },
+      relationships: {
+        hours: {
+          data: []
+        }
+      }
     }
   },
 
   'hour': {
-    records: {
-      'h1': {id: 'h1', name: 'one', amount: 4, order: 'o1'},
-      'h2': {id: 'h2', name: 'two', amount: 3, order: 'o1'},
-      'h3': {id: 'h3', name: 'three', amount: 2, order: 'o3'},
-      'h4': {id: 'h4', name: 'four', amount: 1, order: 'o3'}
-    }
-  },
-
-  'customer': {
-    records: {
-      '1': {
-        id: '1',
-        customerNumber: '123',
-        addresses: [
-          {id: '1', addressNumber: '12345'},
-          {id: '2', addressNumber: '54321'}
-        ],
-        hour: {
-          id: 'h5',
-          name: 'five'
+    'h1': {
+      id: 'h1',
+      type: 'hour',
+      attributes: {
+        name: 'one',
+        amount: 4
+      },
+      relationships: {
+        order: {
+          data: { id: 'o1', type: 'order' }
+        }
+      }
+    },
+    'h2': {
+      id: 'h2',
+      type: 'hour',
+      attributes: {
+        name: 'two',
+        amount: 3
+      },
+      relationships: {
+        order: {
+          data: {
+            id: 'o1',
+            type: 'order'
+          }
+        }
+      }
+    },
+    'h3': {
+      id: 'h3',
+      type: 'hour',
+      attributes: {
+        name: 'three',
+        amount: 2
+      },
+      relationships: {
+        order: {
+          data: {
+            id: 'o3',
+            type: 'order'
+          }
+        }
+      }
+    },
+    'h4': {
+      id: 'h4',
+      type: 'hour',
+      attributes: {
+        name: 'four',
+        amount: 1
+      },
+      relationships: {
+        order: {
+          data: { id: 'o3', type: 'order' }
         }
       }
     }

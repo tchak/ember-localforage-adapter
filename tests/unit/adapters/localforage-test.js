@@ -8,5 +8,4 @@ moduleFor('adapter:localforage', 'LocalforageAdapter', {
   subject: function(options, factory) {
     return factory.create({host: 'test-host'});
   }
-
 });

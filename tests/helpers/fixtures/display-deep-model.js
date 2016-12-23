@@ -1,19 +1,81 @@
 export default {
   'purchase': {
-    records: {
-      '1': {id: '1', name: 'credits', amount: 10, ledger: 1, player: 1}
+    '1': {
+      id: '1',
+      type: 'purchase',
+      attributes: {
+        name: 'credits',
+        amount: 10
+      },
+      relationships: {
+        ledger: {
+          data: {
+            id: '1',
+            type: 'ledger'
+          }
+        },
+        player: {
+          data:{
+            id: '1',
+            type: 'player'
+          }
+        }
+      }
     }
   },
 
   'ledger': {
-    records: {
-      '1': {id: '1', title: 'payable', players: [1], purchases: [1]}
+    '1': {
+      id: '1',
+      type: 'ledger',
+      attributes: {
+        title: 'payable'
+      },
+      relationships: {
+        players: {
+          data: [
+            {
+              id: '1',
+              type: 'player'
+            }
+          ]
+        },
+        purchases: {
+          data: [
+            {
+              id: '1',
+              type: 'purchase'
+            }
+          ]
+        }
+      }
     }
   },
 
   'player': {
-    records: {
-      '1': {id: '1', name: 'one', balance: -10, ledger: 1, purchases: [1]}
+    '1': {
+      id: '1',
+      type: 'player',
+      attributes: {
+        name: 'one',
+        balance: -10
+      },
+      relationships: {
+        ledger: {
+          data: {
+            id: '1',
+            type: 'ledger'
+          }
+        },
+        purchases: {
+          data: [
+            {
+              id: '1',
+              type: 'purchase'
+            }
+          ]
+        }
+      }
     }
   }
 };

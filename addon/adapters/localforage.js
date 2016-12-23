@@ -1,16 +1,44 @@
 import Ember from 'ember';
-import DS from 'ember-data';
-import LFQueue from 'ember-localforage-adapter/utils/queue';
-import LFCache from 'ember-localforage-adapter/utils/cache';
-import {uuid} from 'ember-cli-uuid';
+import JSONAPIAdapter from 'ember-data/adapters/json-api';
+import { cloneDeep as clone } from 'lodash';
+import localforage from 'localforage';
+import uuid from 'uuid';
+import Queue from '../-private/queue';
+import Error from '../-private/error';
 
-export default DS.Adapter.extend(Ember.Evented, {
+const { computed } = Ember;
 
+const isFastBoot = typeof FastBoot !== 'undefined';
+
+const {
+  findRecord: networkFindRecord,
+  findAll: networkFindAll,
+  findMany: networkFindMany,
+  query: networkQuery,
+  queryRecord: networkQueryRecord,
+  createRecord: networkCreateRecord,
+  updateRecord: networkUpdateRecord,
+  deleteRecord: networkDeleteRecord
+} = JSONAPIAdapter.proto();
+
+const STORE_NAME = 'ember-data-store';
+
+class NotFoundError extends Error {}
+
+export default JSONAPIAdapter.extend({
   defaultSerializer: 'localforage',
-  queue: LFQueue.create(),
-  cache: LFCache.create(),
-  caching: 'model',
+  caching: true,
   coalesceFindRequests: true,
+
+  init() {
+    this._super();
+
+    this.queue = new Queue();
+
+    if (this.caching) {
+      this.cache = new Map();
+    }
+  },
 
   shouldBackgroundReloadRecord() {
     return false;
@@ -20,100 +48,312 @@ export default DS.Adapter.extend(Ember.Evented, {
     return true;
   },
 
-  /**
-   * This is the main entry point into finding records. The first parameter to
-   * this method is the model's name as a string.
-   *
-   * @method findRecord
-   * @param store
-   * @param {DS.Model} type
-   * @param {Object|String|Integer|null} id
-   */
-  findRecord(store, type, id) {
-    return this._getNamespaceData(type).then((namespaceData) => {
-      const record = namespaceData.records[id];
+  generateIdForRecord() {
+    if (!this.shouldNetworkCreateRecord()) {
+      return uuid();
+    }
+  },
 
-      if (!record) {
-        return Ember.RSVP.reject();
+  networkFindRecord,
+  networkFindAll,
+  networkFindMany,
+  networkQueryRecord,
+  networkQuery,
+  networkCreateRecord,
+  networkUpdateRecord,
+  networkDeleteRecord,
+
+  shouldNetworkRequest() {
+    return false; //this.isOnLine();
+  },
+
+  isOnLine() {
+    return isFastBoot || navigator.onLine !== false;
+  },
+
+  shouldNetworkReloadRecord() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkReloadAll() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkFindMany() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkQueryRecord() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkQuery() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkCreateRecord() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkUpdateRecord() {
+    return this.shouldNetworkRequest();
+  },
+
+  shouldNetworkDeleteRecord() {
+    return this.shouldNetworkRequest();
+  },
+
+  attach(callback) {
+    return this.queue.attach((resolve, reject) => {
+      if (this.isOnLine()) {
+        callback(resolve, reject);
+      } else {
+        reject();
       }
-
-      return record;
     });
   },
 
-  findAll(store, type) {
-    return this._getNamespaceData(type).then((namespaceData) => {
-      const records = [];
+  localFindRecord(store, type, id) {
+    return this.queue.attach(async (resolve, reject) => {
+      let data = await this.getData(type);
+      let record = data[id];
 
-      for (let id in namespaceData.records) {
-        records.push(namespaceData.records[id]);
+      if (record) {
+        resolve({ data: record });
+      } else {
+        reject(new NotFoundError(`Not found: ${type.modelName}#${id}`));
       }
-
-      return records;
     });
   },
 
-  findMany(store, type, ids) {
-    return this._getNamespaceData(type).then((namespaceData) => {
-      const records = [];
+  localFindAll(store, type) {
+    return this.queue.attach(async (resolve, reject) => {
+      let data = await this.getData(type);
+      let records = [];
 
-      for (let i = 0; i < ids.length; i++) {
-        const record = namespaceData.records[ids[i]];
+      for (let id in data) {
+        records.push(data[id]);
+      }
+
+      if (records.length > 0) {
+        resolve({ data: records });
+      } else {
+        reject(new NotFoundError());
+      }
+    });
+  },
+
+  localFindMany(store, type, ids) {
+    return this.queue.attach(async (resolve) => {
+      let data = await this.getData(type);
+      let records = [];
+
+      for (let id of ids) {
+        let record = data[id];
 
         if (record) {
           records.push(record);
         }
       }
 
-      return records;
+      resolve({ data: records });
     });
   },
 
-  queryRecord(store, type, query) {
-    return this._getNamespaceData(type).then((namespaceData) => {
-      const record = this._query(namespaceData.records, query, true);
+  localQueryRecord(store, type, query) {
+    return this.queue.attach(async (resolve, reject) => {
+      let data = await this.getData(type);
+      let record = this.queryLocalCache(data, query, true);
 
-      if (!record) {
-        return Ember.RSVP.reject();
+      if (record) {
+        resolve({ data: record });
+      } else {
+        reject(new NotFoundError(`Not found: ${type.modelName}#${query}`));
+      }
+    });
+  },
+
+  localQuery(store, type, query) {
+    return this.queue.attach(async (resolve) => {
+      let data = await this.getData(type);
+      let records = this.queryLocalCache(data, query);
+
+      resolve({ data: records });
+    });
+  },
+
+  localUpdateRecord(store, type, snapshot) {
+    let { data } = this.serializeRecord(store, type, snapshot);
+
+    return this.save(type, data);
+  },
+
+  localDeleteRecord(store, type, snapshot) {
+    return this.save(type, { id: snapshot.id, meta: { deleted: true } });
+  },
+
+  async findRecord(store, type, id) {
+    try {
+      return this.localFindRecord(...arguments);
+    } catch (e) {
+      if (this.shouldNetworkReloadRecord(type, id)) {
+        let data = await this.networkFindRecord(...arguments);
+        await this.save(type, data.data);
+        return data;
       }
 
-      return record;
-    });
+      throw e;
+    }
+  },
+
+  async findAll(store, type) {
+    try {
+      return this.localFindAll(...arguments);
+    } catch(e) {
+      if (this.shouldNetworkReloadAll(type)) {
+        let data = await this.networkFindAll(...arguments);
+        await this.save(type, data.data, true);
+        return data;
+      }
+
+      return { data: [] };
+    }
+  },
+
+  async findMany(store, type, ids) {
+    try {
+      return this.localFindMany(...arguments);
+    } catch(e) {
+      if (this.shouldNetworkFindMany(type, ids)) {
+        let data = await this.networkFindMany(...arguments);
+        await this.save(type, data.data);
+        return data;
+      }
+
+      return { data: [] };
+    }
+  },
+
+  async queryRecord(store, type, query) {
+    try {
+      return this.localQueryRecord(...arguments);
+    } catch(e) {
+      if (this.shouldNetworkQueryRecord(type, query)) {
+        let data = await this.networkQueryRecord(...arguments);
+        await this.save(type, [data.data]);
+        return data;
+      }
+
+      throw e;
+    }
+  },
+
+  async query(store, type, query) {
+    try {
+      return this.localQuery(...arguments);
+    } catch(e) {
+      if (this.shouldNetworkQuery(type, query)) {
+        let data = await this.networkQuery(...arguments);
+        await this.save(type, data.data);
+        return data;
+      }
+
+      return { data: [] };
+    }
+  },
+
+  async createRecord(store, type, snapshot) {
+    try {
+      if (this.shouldNetworkCreateRecord(type, snapshot.id)) {
+        await this.networkCreateRecord(...arguments);
+      }
+    } finally {
+      /* eslint-disable no-unsafe-finally */
+      return this.localUpdateRecord(...arguments);
+      /* eslint-enable no-unsafe-finally */
+    }
+  },
+
+  async updateRecord(store, type, snapshot) {
+    try {
+      if (this.shouldNetworkUpdateRecord(type, snapshot.id)) {
+        await this.networkUpdateRecord(...arguments);
+      }
+    } finally {
+      /* eslint-disable no-unsafe-finally */
+      return this.localUpdateRecord(...arguments);
+      /* eslint-enable no-unsafe-finally */
+    }
+  },
+
+  async deleteRecord(store, type, snapshot) {
+    try {
+      if (this.shouldNetworkDeleteRecord(type, snapshot.id)) {
+        await this.networkDeleteRecord(...arguments);
+      }
+    } finally {
+      /* eslint-disable no-unsafe-finally */
+      return this.localDeleteRecord(...arguments);
+      /* eslint-enable no-unsafe-finally */
+    }
+  },
+
+  clear(type) {
+    return this.save(type, [], true);
+  },
+
+  async clearAll() {
+    await this.get('localforage').clear();
+    this.cache.clear();
+    this.queue = new Queue();
+  },
+
+  async push({ data, included }) {
+    data = clone(data);
+    included = clone(included);
+
+    if (!Array.isArray(data)) {
+      data = [data];
+    }
+
+    if (included) {
+      data = data.concat(included);
+    }
+
+    let dataByModelName = {};
+
+    for (let record of data) {
+      dataByModelName[record.type] = dataByModelName[record.type] || [];
+      dataByModelName[record.type].push(record);
+    }
+
+    for (let modelName in dataByModelName) {
+      await this.save({ modelName }, dataByModelName);
+    }
   },
 
   /**
-   *  Supports queries that look like this:
-   *   {
-   *     <property to query>: <value or regex (for strings) to match>,
-   *     ...
-   *   }
-   *
-   * Every property added to the query is an "AND" query, not "OR"
-   *
-   * Example:
-   * match records with "complete: true" and the name "foo" or "bar"
-   *  { complete: true, name: /foo|bar/ }
+   * @private
    */
-  query(store, type, query) {
-    return this._getNamespaceData(type).then((namespaceData) => {
-      return this._query(namespaceData.records, query);
-    });
-  },
-
-  _query(records, query, singleMatch) {
-    const results = singleMatch ? null : [];
+  queryLocalCache(records, query, singleMatch) {
+    let results = singleMatch ? null : [];
 
     for (let id in records) {
-      const record = records[id];
+      let record = records[id];
       let isMatching = false;
 
       for (let property in query) {
-        const queryValue = query[property];
+        let queryValue = query[property];
+        let attributeValue = record.attributes[property];
+
+        if (property === 'id') {
+          attributeValue = record[property];
+        }
 
         if (queryValue instanceof RegExp) {
-          isMatching = queryValue.test(record[property]);
+          isMatching = queryValue.test(attributeValue);
         } else {
-          isMatching = record[property] === queryValue;
+          isMatching = attributeValue === queryValue;
         }
 
         if (!isMatching) {
@@ -133,96 +373,95 @@ export default DS.Adapter.extend(Ember.Evented, {
     return results;
   },
 
-  createRecord: updateOrCreate,
-
-  updateRecord: updateOrCreate,
-
-  deleteRecord(store, type, snapshot) {
-    return this.queue.attach((resolve) => {
-      this._getNamespaceData(type).then((namespaceData) => {
-        delete namespaceData.records[snapshot.id];
-
-        this._setNamespaceData(type, namespaceData).then(() => {
-          resolve();
-        });
-      });
-    });
+  /**
+   * @private
+   */
+  serializeRecord(store, { modelName }, snapshot) {
+    let serializer = store.serializerFor(modelName);
+    return serializer.serialize(snapshot, { includeId: true });
   },
 
-  generateIdForRecord() {
-    return uuid();
-  },
+  /**
+   * @private
+   */
+  save(type, payload, replace = false) {
+    return this.queue.attach(async (resolve) => {
+      let data = {};
 
-  // private
+      if (!replace) {
+        data = await this.getData(type);
 
-  _setNamespaceData(type, namespaceData) {
-    const modelNamespace = this._modelNamespace(type);
-
-    return this._loadData().then((storage) => {
-      if (this.caching !== 'none') {
-        this.cache.set(modelNamespace, namespaceData);
-      }
-
-      storage[modelNamespace] = namespaceData;
-
-      return window.localforage.setItem(this._adapterNamespace(), storage);
-    });
-  },
-
-  _getNamespaceData(type) {
-    const modelNamespace = this._modelNamespace(type);
-
-    if (this.caching !== 'none') {
-      const cache = this.cache.get(modelNamespace);
-
-      if (cache) {
-        return Ember.RSVP.resolve(cache);
-      }
-    }
-
-    return this._loadData().then((storage) => {
-      const namespaceData = storage && storage[modelNamespace] || { records: {} };
-
-      if (this.caching === 'model') {
-        this.cache.set(modelNamespace, namespaceData);
-      } else if (this.caching === 'all') {
-        if (storage) {
-          this.cache.replace(storage);
+        if (Array.isArray(payload)) {
+          for (let record of payload) {
+            data[record.id] = record;
+          }
+        } else if (payload.meta && payload.meta.deleted) {
+          delete data[payload.id];
+        } else {
+          data[payload.id] = payload;
         }
       }
 
-      return namespaceData;
+      await this.setData(type, data);
+
+      resolve();
     });
   },
 
-  _loadData() {
-    return window.localforage.getItem(this._adapterNamespace()).then((storage) => {
-      return storage ? storage : {};
-    });
+  /**
+   * @private
+   */
+  localforage: computed(function() {
+    let namespace = this.get('namespace');
+
+    let storeName = namespace ? `${STORE_NAME}-${namespace}` : STORE_NAME;
+
+    return localforage.createInstance({ storeName });
+  }),
+
+  /**
+   * @private
+   */
+  setData({ modelName }, data) {
+    if (this.caching) {
+      this.cache.set(modelName, data);
+    }
+
+    return this.writeData(modelName, data);
   },
 
-  _modelNamespace(type) {
-    return type.url || type.modelName;
+  /**
+   * @private
+   */
+  async getData({ modelName }) {
+    if (this.caching) {
+      let cache = this.cache.get(modelName);
+
+      if (cache) {
+        return clone(cache);
+      }
+    }
+
+    let data = await this.readData(modelName);
+
+    if (this.caching) {
+      this.cache.set(modelName, clone(data));
+    }
+
+    return data;
   },
 
-  _adapterNamespace() {
-    return this.get('namespace') || 'DS.LFAdapter';
+  /**
+   * @private
+   */
+  readData(modelName) {
+    return this.get('localforage').getItem(modelName) || {};
+  },
+
+  /**
+   * @private
+   */
+  writeData(modelName, data) {
+    return this.get('localforage').setItem(modelName, data || {});
   }
 });
-
-function updateOrCreate(store, type, snapshot) {
-  return this.queue.attach((resolve) => {
-    this._getNamespaceData(type).then((namespaceData) => {
-      const serializer = store.serializerFor(type.modelName);
-      const recordHash = serializer.serialize(snapshot, {includeId: true});
-      // update(id comes from snapshot) or create(id comes from serialization)
-      const id = snapshot.id || recordHash.id;
-
-      namespaceData.records[id] = recordHash;
-
-      this._setNamespaceData(type, namespaceData).then(() => {
-        resolve();
-      });
-    });
-  });
-}
