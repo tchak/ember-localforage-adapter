@@ -328,9 +328,9 @@ test("save belongsTo relationships", async function(assert) {
   let item = run(() => store.createRecord('item', { name: 'three thousand' }));
   run(() => item.set('list', list));
   await run(() => item.save());
-
+  let itemId = item.get('id');
   run(() => store.unloadAll('item'));
-  item = await run(() => store.findRecord('item', item.get('id')));
+  item = await run(() => store.findRecord('item', itemId));
   list = await item.get('list');
 
   assert.ok(item.get('list'), "list is present");
