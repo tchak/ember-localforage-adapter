@@ -6,7 +6,7 @@ import uuid from 'uuid';
 import Queue from '../-private/queue';
 import Error from '../-private/error';
 
-const { computed } = Ember;
+const { computed, RSVP } = Ember;
 
 const isFastBoot = typeof FastBoot !== 'undefined';
 
@@ -24,6 +24,14 @@ const {
 const STORE_NAME = 'ember-data-store';
 
 class NotFoundError extends Error {}
+
+function notFound(e) {
+  if (e instanceof NotFoundError) {
+    return null;
+  } else {
+    throw e;
+  }
+}
 
 export default JSONAPIAdapter.extend({
   defaultSerializer: 'localforage',
@@ -64,7 +72,7 @@ export default JSONAPIAdapter.extend({
   networkDeleteRecord,
 
   shouldNetworkRequest() {
-    return false; //this.isOnLine();
+    return this.isOnLine();
   },
 
   isOnLine() {
@@ -103,17 +111,9 @@ export default JSONAPIAdapter.extend({
     return this.shouldNetworkRequest();
   },
 
-  attach(callback) {
-    return this.queue.attach((resolve, reject) => {
-      if (this.isOnLine()) {
-        callback(resolve, reject);
-      } else {
-        reject();
-      }
-    });
-  },
-
   localFindRecord(store, type, id) {
+    if (isFastBoot) { return RSVP.resolve(null); }
+
     return this.queue.attach(async (resolve, reject) => {
       let data = await this.getData(type);
       let record = data[id];
@@ -127,6 +127,8 @@ export default JSONAPIAdapter.extend({
   },
 
   localFindAll(store, type) {
+    if (isFastBoot) { return RSVP.resolve(null); }
+
     return this.queue.attach(async (resolve, reject) => {
       let data = await this.getData(type);
       let records = [];
@@ -144,6 +146,8 @@ export default JSONAPIAdapter.extend({
   },
 
   localFindMany(store, type, ids) {
+    if (isFastBoot) { return RSVP.resolve(null); }
+
     return this.queue.attach(async (resolve) => {
       let data = await this.getData(type);
       let records = [];
@@ -161,6 +165,8 @@ export default JSONAPIAdapter.extend({
   },
 
   localQueryRecord(store, type, query) {
+    if (isFastBoot) { return RSVP.resolve(null); }
+
     return this.queue.attach(async (resolve, reject) => {
       let data = await this.getData(type);
       let record = this.queryLocalCache(data, query, true);
@@ -174,6 +180,8 @@ export default JSONAPIAdapter.extend({
   },
 
   localQuery(store, type, query) {
+    if (isFastBoot) { return RSVP.resolve(null); }
+
     return this.queue.attach(async (resolve) => {
       let data = await this.getData(type);
       let records = this.queryLocalCache(data, query);
@@ -183,83 +191,88 @@ export default JSONAPIAdapter.extend({
   },
 
   localUpdateRecord(store, type, snapshot) {
+    if (isFastBoot) { return RSVP.resolve(); }
+
     let { data } = this.serializeRecord(store, type, snapshot);
 
     return this.save(type, data);
   },
 
   localDeleteRecord(store, type, snapshot) {
+    if (isFastBoot) { return RSVP.resolve(); }
+
     return this.save(type, { id: snapshot.id, meta: { deleted: true } });
   },
 
   async findRecord(store, type, id) {
-    try {
-      return this.localFindRecord(...arguments);
-    } catch (e) {
-      if (this.shouldNetworkReloadRecord(type, id)) {
-        let data = await this.networkFindRecord(...arguments);
-        await this.save(type, data.data);
-        return data;
-      }
+    let data = await this.localFindRecord(...arguments).catch(notFound);
 
-      throw e;
+    if (!data && this.shouldNetworkReloadRecord(type, id)) {
+      data = await this.networkFindRecord(...arguments);
+      await this.save(type, data.data);
     }
+
+    if (!data) { throw new NotFoundError(); }
+
+    return data;
   },
 
   async findAll(store, type) {
-    try {
-      return this.localFindAll(...arguments);
-    } catch(e) {
-      if (this.shouldNetworkReloadAll(type)) {
-        let data = await this.networkFindAll(...arguments);
-        await this.save(type, data.data, true);
-        return data;
-      }
+    let data = await this.localFindAll(...arguments).catch(notFound);
 
+    if (!data && this.shouldNetworkReloadAll(type)) {
+      data = await this.networkFindAll(...arguments);
+      await this.save(type, data.data, true);
+    }
+
+    if (!data) {
       return { data: [] };
     }
+
+    return data;
   },
 
   async findMany(store, type, ids) {
-    try {
-      return this.localFindMany(...arguments);
-    } catch(e) {
-      if (this.shouldNetworkFindMany(type, ids)) {
-        let data = await this.networkFindMany(...arguments);
-        await this.save(type, data.data);
-        return data;
-      }
+    let data = await this.localFindMany(...arguments).catch(notFound);
 
+    if (!data && this.shouldNetworkFindMany(type, ids)) {
+      data = await this.networkFindMany(...arguments);
+      await this.save(type, data.data);
+    }
+
+    if (!data) {
       return { data: [] };
     }
+
+    return data;
   },
 
   async queryRecord(store, type, query) {
-    try {
-      return this.localQueryRecord(...arguments);
-    } catch(e) {
-      if (this.shouldNetworkQueryRecord(type, query)) {
-        let data = await this.networkQueryRecord(...arguments);
-        await this.save(type, [data.data]);
-        return data;
-      }
+    let data = await this.localQueryRecord(...arguments).catch(notFound);
 
-      throw e;
+    if (!data && this.shouldNetworkQueryRecord(type, query)) {
+      data = await this.networkQueryRecord(...arguments);
+      await this.save(type, [data.data]);
     }
+
+    if (!data) { throw new NotFoundError(); }
+
+    return data;
   },
 
   async query(store, type, query) {
-    try {
-      return this.localQuery(...arguments);
-    } catch(e) {
-      if (this.shouldNetworkQuery(type, query)) {
-        let data = await this.networkQuery(...arguments);
-        await this.save(type, data.data);
-        return data;
-      }
+    let data = await this.localQuery(...arguments).catch(notFound);
 
+    if (!data && this.shouldNetworkQuery(type, query)) {
+      data = await this.networkQuery(...arguments);
+      await this.save(type, data.data);
+    }
+
+    if (!data) {
       return { data: [] };
     }
+
+    return data;
   },
 
   async createRecord(store, type, snapshot) {

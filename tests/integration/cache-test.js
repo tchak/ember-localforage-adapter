@@ -2,6 +2,7 @@ import Ember from 'ember';
 import { moduleFor, test } from 'ember-qunit';
 import FIXTURES from '../helpers/fixtures/crud';
 import loadFixtures from '../helpers/load-fixtures';
+import { offLine } from '../helpers/on-line';
 
 var store;
 var adapter;
@@ -14,6 +15,7 @@ moduleFor('service:store', "Cache", {
   integration: true,
 
   async beforeEach() {
+    offLine();
     store = this.subject();
     adapter = store.adapterFor('default');
 

@@ -3,9 +3,11 @@ import { test } from 'ember-qunit';
 import moduleForAcceptance from '../helpers/module-for-acceptance';
 import FIXTURES from '../helpers/fixtures/display-deep-model';
 import loadFixtures from '../helpers/load-fixtures';
+import { offLine } from '../helpers/on-line';
 
 moduleForAcceptance('Acceptance | Display deep model', {
   async beforeEach() {
+    offLine();
     let adapter = this.application.__container__.lookup('adapter:application');
 
     await adapter.clearAll();

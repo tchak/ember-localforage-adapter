@@ -4,6 +4,7 @@ import uuid from 'uuid';
 import FIXTURES from '../helpers/fixtures/crud';
 import MOCK_FIXTURES from '../helpers/fixtures/mock';
 import loadFixtures from '../helpers/load-fixtures';
+import { offLine } from '../helpers/on-line';
 
 var store;
 const { run, get } = Ember;
@@ -12,6 +13,7 @@ moduleFor('service:store', "CRUD", {
   integration: true,
 
   async beforeEach() {
+    offLine();
     store = this.subject();
 
     //await adapter.clearAll();
