@@ -2,7 +2,7 @@
 'use strict';
 
 module.exports = {
-  name: 'ember-localforage-adapter',
+  name: 'ember-offline-adapter',
 
   options: {
     nodeAssets: {

@@ -1,5 +1,5 @@
-import LFAdapter from 'ember-localforage-adapter/adapters/localforage';
+import OfflineAdapter from 'ember-offline-adapter';
 
-export default LFAdapter.extend({
+export default OfflineAdapter.extend({
   namespace: 'MockAdapter'
 });

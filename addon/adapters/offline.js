@@ -21,7 +21,7 @@ const {
   deleteRecord: networkDeleteRecord
 } = JSONAPIAdapter.proto();
 
-const STORE_NAME = 'ember-data-store';
+const STORE_NAME = 'ember-offline-store';
 
 class NotFoundError extends Error {}
 
@@ -34,7 +34,7 @@ function notFound(e) {
 }
 
 export default JSONAPIAdapter.extend({
-  defaultSerializer: 'localforage',
+  defaultSerializer: 'offline',
   caching: true,
   coalesceFindRequests: true,
 
