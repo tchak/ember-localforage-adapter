@@ -1,12 +1,12 @@
 import Ember from 'ember';
-import localforage from 'ember-offline-adapter/localforage';
+import { storage } from 'ember-offline-adapter';
 
 export default async function(fixtures, namespace = null) {
-  let storage = localforage(namespace);
+  let _storage = storage(namespace);
 
   await Ember.run(async function() {
     for (let key in fixtures) {
-      await storage.setItem(key, fixtures[key]);
+      await _storage.setItem(key, fixtures[key]);
     }
   });
 }

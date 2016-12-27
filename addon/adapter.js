@@ -1,11 +1,10 @@
 import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
 
-import localforage, { STORE_NAME } from '../localforage';
-import serialize from '../serialize-snapshot';
-import { passthrough, clone, groupBy, uuid } from '../-utils';
-import Queue from '../-queue';
-import Error from '../-error';
+import localforage, { STORE_NAME } from './localforage';
+import { passthrough, clone, groupBy, uuid } from './-utils';
+import Queue from './-queue';
+import Error from './-error';
 
 const { computed, RSVP } = Ember;
 
@@ -182,7 +181,7 @@ export default JSONAPIAdapter.extend({
   },
 
   localCreateRecord(store, snapshot) {
-    let payload = serialize(snapshot);
+    let payload = snapshot.dump();
 
     if (isFastBoot) {
       payload = passthrough({ data: payload });
@@ -194,7 +193,7 @@ export default JSONAPIAdapter.extend({
   },
 
   localUpdateRecord(store, snapshot) {
-    let payload = serialize(snapshot);
+    let payload = snapshot.dump();
 
     if (isFastBoot) {
       payload = passthrough({ data: payload });

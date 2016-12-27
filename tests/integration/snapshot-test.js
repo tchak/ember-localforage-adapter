@@ -1,8 +1,7 @@
 import Ember from 'ember';
 import { moduleFor, test } from 'ember-qunit';
 import FIXTURES from '../helpers/fixtures/crud';
-import serialize from 'ember-offline-adapter/serialize-snapshot';
-import { clone } from 'ember-offline-adapter/-utils';
+import { clone } from 'ember-offline-adapter';
 
 var store;
 
@@ -25,14 +24,12 @@ test('toJSON', async function(assert) {
   let list = await store.findRecord('list', 'l1');
   let post = await store.findRecord('post', 'p1');
 
-  let snapshot = post._createSnapshot();
-  let data = serialize(snapshot);
+  let data = post._createSnapshot().dump();
 
   assert.deepEqual(data, FIXTURES.post.p1);
 
   assert.equal(list.get('day'), 1);
-  snapshot = list._createSnapshot();
-  data = serialize(snapshot);
+  data = list._createSnapshot().dump();
   assert.equal(data.attributes.day, 24);
 
   assert.deepEqual(data, FIXTURES.list.l1);
