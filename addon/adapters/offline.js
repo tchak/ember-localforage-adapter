@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
 import { cloneDeep as clone, groupBy } from 'lodash';
-import localforage from 'localforage';
+import localforage, { STORE_NAME } from '../localforage';
 import uuid from 'uuid';
 import Queue from '../-private/queue';
 import Error from '../-private/error';
@@ -23,17 +23,7 @@ const {
   deleteRecord: networkDeleteRecord
 } = JSONAPIAdapter.proto();
 
-const STORE_NAME = 'ember-offline-store';
-
 class NotFoundError extends Error {}
-
-// function notFound(e) {
-//   if (e instanceof NotFoundError) {
-//     return null;
-//   } else {
-//     throw e;
-//   }
-// }
 
 export default JSONAPIAdapter.extend({
   defaultSerializer: 'offline',
@@ -448,11 +438,18 @@ export default JSONAPIAdapter.extend({
    * @private
    */
   localforage: computed(function() {
-    let namespace = this.get('namespace');
+    return localforage(this.get('namespace'));
+  }),
 
-    let storeName = namespace ? `${STORE_NAME}-${namespace}` : STORE_NAME;
+  /**
+   * @private
+   */
+  shoebox: computed(function() {
+    let shoebox = this.get('fastboot.shoebox');
 
-    return localforage.createInstance({ storeName });
+    if (shoebox) {
+      return (shoebox.retrieve(STORE_NAME) || {}).records;
+    }
   }),
 
   /**
@@ -479,6 +476,12 @@ export default JSONAPIAdapter.extend({
     }
 
     let data = await this.readFromLocalStorage(modelName);
+    let cache = this.get(`shoebox.${modelName}`);
+
+    if (cache) {
+      Object.assign(data, cache);
+      await this.writeToLocalStorage(modelName, data);
+    }
 
     if (this.caching) {
       this.cache.set(modelName, clone(data));

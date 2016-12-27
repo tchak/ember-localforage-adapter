@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "description": "Store your ember application data in Mozilla's localforage.",
   "keywords": [
-    "ember-addon"
+    "ember-addon",
+    "fastboot",
+    "ember-data"
   ],
   "license": "MIT",
   "author": "Paul Chavard",
