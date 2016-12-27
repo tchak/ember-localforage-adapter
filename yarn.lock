@@ -572,7 +572,7 @@ broccoli-builder@^0.18.0:
     rsvp "^3.0.17"
     silent-error "^1.0.1"
 
-broccoli-caching-writer@^2.0.4, broccoli-caching-writer@^2.2.0:
+broccoli-caching-writer@^2.0.4:
   version "2.3.1"
   resolved "https://registry.yarnpkg.com/broccoli-caching-writer/-/broccoli-caching-writer-2.3.1.tgz#b93cf58f9264f003075868db05774f4e7f25bd07"
   dependencies:
@@ -769,16 +769,6 @@ broccoli-slow-trees@^3.0.1:
 broccoli-source@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/broccoli-source/-/broccoli-source-1.1.0.tgz#54f0e82c8b73f46580cbbc4f578f0b32fca8f809"
-
-broccoli-sri-hash@^2.1.0:
-  version "2.1.2"
-  resolved "https://registry.yarnpkg.com/broccoli-sri-hash/-/broccoli-sri-hash-2.1.2.tgz#bc69905ed7a381ad325cc0d02ded071328ebf3f3"
-  dependencies:
-    broccoli-caching-writer "^2.2.0"
-    mkdirp "^0.5.1"
-    rsvp "^3.1.0"
-    sri-toolbox "^0.2.0"
-    symlink-or-copy "^1.0.1"
 
 broccoli-stew@^1.2.0, broccoli-stew@^1.3.3:
   version "1.4.0"
@@ -1386,7 +1376,7 @@ ember-cli-app-version@^2.0.0:
     ember-cli-htmlbars "^1.0.0"
     git-repo-version "0.4.1"
 
-ember-cli-babel@^5.1.10, ember-cli-babel@^5.1.3, ember-cli-babel@^5.1.5, ember-cli-babel@^5.1.6, ember-cli-babel@^5.1.7, ember-cli-babel@^5.2.1:
+ember-cli-babel@^5.1.3, ember-cli-babel@^5.1.5, ember-cli-babel@^5.1.6, ember-cli-babel@^5.1.7, ember-cli-babel@^5.2.1:
   version "5.2.1"
   resolved "https://registry.yarnpkg.com/ember-cli-babel/-/ember-cli-babel-5.2.1.tgz#14a1a7b3ae9e9f1284f7bcdb142eb53bd0b1b5bd"
   dependencies:
@@ -1414,7 +1404,7 @@ ember-cli-dependency-checker@^1.3.0:
     is-git-url "0.2.0"
     semver "^4.1.0"
 
-ember-cli-eslint@^3.0.0:
+ember-cli-eslint@3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/ember-cli-eslint/-/ember-cli-eslint-3.0.0.tgz#83eb12b01e1bd41ce7d35fbd6dd18136faa1398b"
   dependencies:
@@ -1423,6 +1413,16 @@ ember-cli-eslint@^3.0.0:
     js-string-escape "^1.0.0"
     rsvp "^3.2.1"
     walk-sync "^0.3.0"
+
+ember-cli-fake-server@^0.3.2:
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/ember-cli-fake-server/-/ember-cli-fake-server-0.3.2.tgz#17dadd19e93970b38ca20ceac2539004a3e53d17"
+  dependencies:
+    ember-cli-babel "^5.1.7"
+    ember-cli-node-assets "^0.1.6"
+    fake-xml-http-request "^1.4.0"
+    pretender "^1.4.2"
+    route-recognizer "^0.2.8"
 
 ember-cli-get-component-path-option@^1.0.0:
   version "1.0.0"
@@ -1441,7 +1441,7 @@ ember-cli-htmlbars-inline-precompile@^0.3.3:
     ember-cli-htmlbars "^1.0.0"
     hash-for-dep "^1.0.2"
 
-ember-cli-htmlbars@^1.0.0, ember-cli-htmlbars@^1.0.1, ember-cli-htmlbars@^1.0.10:
+ember-cli-htmlbars@^1.0.0, ember-cli-htmlbars@^1.0.10:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/ember-cli-htmlbars/-/ember-cli-htmlbars-1.1.1.tgz#8776cf59796dac8f32e8625fc6d1ea45ffa55de1"
   dependencies:
@@ -1548,12 +1548,6 @@ ember-cli-release@^0.2.9:
     semver "^4.3.1"
     silent-error "^1.0.0"
 
-ember-cli-sri@^2.1.0:
-  version "2.1.1"
-  resolved "https://registry.yarnpkg.com/ember-cli-sri/-/ember-cli-sri-2.1.1.tgz#971620934a4b9183cf7923cc03e178b83aa907fd"
-  dependencies:
-    broccoli-sri-hash "^2.1.0"
-
 ember-cli-string-utils@^1.0.0:
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/ember-cli-string-utils/-/ember-cli-string-utils-1.0.0.tgz#d07b17d0b6223c42e09bfb835ee2b8466ec9b88e"
@@ -1581,12 +1575,6 @@ ember-cli-valid-component-name@^1.0.0:
   resolved "https://registry.yarnpkg.com/ember-cli-valid-component-name/-/ember-cli-valid-component-name-1.0.0.tgz#71550ce387e0233065f30b30b1510aa2dfbe87ef"
   dependencies:
     silent-error "^1.0.0"
-
-ember-cli-version-checker@1.1.6:
-  version "1.1.6"
-  resolved "https://registry.yarnpkg.com/ember-cli-version-checker/-/ember-cli-version-checker-1.1.6.tgz#d789418b8a3627bd43486da42b9d3d76dbcc0e1d"
-  dependencies:
-    semver "^4.2.2"
 
 ember-cli-version-checker@^1.0.2, ember-cli-version-checker@^1.1.4, ember-cli-version-checker@^1.1.6, ember-cli-version-checker@^1.1.7:
   version "1.2.0"
@@ -1707,18 +1695,6 @@ ember-data@^2.10.0:
     semver "^5.1.0"
     silent-error "^1.0.0"
 
-ember-disable-prototype-extensions@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/ember-disable-prototype-extensions/-/ember-disable-prototype-extensions-1.1.0.tgz#86081c8cf6741f26e4b89e2b004f761174313e01"
-  dependencies:
-    ember-cli-babel "^5.1.5"
-
-ember-export-application-global@^1.0.5:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/ember-export-application-global/-/ember-export-application-global-1.1.1.tgz#f257d5271268932a89d7392679ce4db89d7154af"
-  dependencies:
-    ember-cli-babel "^5.1.10"
-
 ember-inflector@^1.9.4:
   version "1.9.6"
   resolved "https://registry.yarnpkg.com/ember-inflector/-/ember-inflector-1.9.6.tgz#574b093664ade6c66e84185d788ec99ed29741af"
@@ -1797,19 +1773,6 @@ ember-try@^0.2.6:
     rsvp "^3.0.17"
     semver "^5.1.0"
     sync-exec "^0.6.2"
-
-ember-welcome-page@^1.0.3:
-  version "1.0.4"
-  resolved "https://registry.yarnpkg.com/ember-welcome-page/-/ember-welcome-page-1.0.4.tgz#b19b00ac9bd84f55b64704d2ecfb6aa3f824d2d8"
-  dependencies:
-    broccoli-funnel "^1.0.1"
-    broccoli-merge-trees "^1.1.1"
-    ember-cli-babel "^5.1.5"
-    ember-cli-htmlbars "^1.0.1"
-    ember-cli-version-checker "1.1.6"
-    exists-sync "0.0.3"
-    lodash "^4.7.0"
-    walk-sync "^0.2.6"
 
 encodeurl@~1.0.1:
   version "1.0.1"
@@ -2156,6 +2119,10 @@ extglob@^0.3.1:
 extsprintf@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/extsprintf/-/extsprintf-1.0.2.tgz#e1080e0658e300b06294990cc70e1502235fd550"
+
+fake-xml-http-request@^1.4.0:
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/fake-xml-http-request/-/fake-xml-http-request-1.4.0.tgz#6481c727a0eae9c420bae229dcdfc5369c4b5477"
 
 falafel@^1.0.1:
   version "1.2.0"
@@ -3416,7 +3383,7 @@ lodash@^3.10.0, lodash@^3.10.1, lodash@^3.9.3:
   version "3.10.1"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-3.10.1.tgz#5bf45e8e49ba4189e17d482789dfd15bd140b7b6"
 
-lodash@^4.0.0, lodash@^4.14.0, lodash@^4.3.0, lodash@^4.5.0, lodash@^4.5.1, lodash@^4.6.1, lodash@^4.7.0:
+lodash@^4.0.0, lodash@^4.14.0, lodash@^4.3.0, lodash@^4.5.0, lodash@^4.5.1, lodash@^4.6.1:
   version "4.17.2"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.2.tgz#34a3055babe04ce42467b607d700072c7ff6bf42"
 
@@ -4071,6 +4038,13 @@ preserve@^0.2.0:
   version "0.2.0"
   resolved "https://registry.yarnpkg.com/preserve/-/preserve-0.2.0.tgz#815ed1f6ebc65926f865b310c0713bcb3315ce4b"
 
+pretender@^1.4.2:
+  version "1.4.2"
+  resolved "https://registry.yarnpkg.com/pretender/-/pretender-1.4.2.tgz#dde9995dfdf75b28a3dd7a73cde2f9f612e5e8f4"
+  dependencies:
+    fake-xml-http-request "^1.4.0"
+    route-recognizer "^0.2.3"
+
 printf@^0.2.3:
   version "0.2.5"
   resolved "https://registry.yarnpkg.com/printf/-/printf-0.2.5.tgz#c438ca2ca33e3927671db4ab69c0e52f936a4f0f"
@@ -4459,7 +4433,11 @@ rimraf@~2.2.6:
   version "2.2.8"
   resolved "https://registry.yarnpkg.com/rimraf/-/rimraf-2.2.8.tgz#e439be2aaee327321952730f99a8929e4fc50582"
 
-rsvp@^3.0.14, rsvp@^3.0.16, rsvp@^3.0.17, rsvp@^3.0.18, rsvp@^3.0.21, rsvp@^3.0.6, rsvp@^3.1.0, rsvp@^3.2.1, rsvp@^3.3.3:
+route-recognizer@^0.2.3, route-recognizer@^0.2.8:
+  version "0.2.8"
+  resolved "https://registry.yarnpkg.com/route-recognizer/-/route-recognizer-0.2.8.tgz#931e2629b09f351ac8e577aea03ad0151781e625"
+
+rsvp@^3.0.14, rsvp@^3.0.16, rsvp@^3.0.17, rsvp@^3.0.18, rsvp@^3.0.21, rsvp@^3.0.6, rsvp@^3.2.1, rsvp@^3.3.3:
   version "3.3.3"
   resolved "https://registry.yarnpkg.com/rsvp/-/rsvp-3.3.3.tgz#34633caaf8bc66ceff4be3c2e1dffd032538a813"
 
@@ -4510,7 +4488,7 @@ sane@^1.1.1:
   version "5.3.0"
   resolved "https://registry.yarnpkg.com/semver/-/semver-5.3.0.tgz#9b2ce5d3de02d17c6012ad326aa6b4d0cf54f94f"
 
-semver@^4.1.0, semver@^4.2.2, semver@^4.3.1:
+semver@^4.1.0, semver@^4.3.1:
   version "4.3.6"
   resolved "https://registry.yarnpkg.com/semver/-/semver-4.3.6.tgz#300bc6e0e86374f7ba61068b5b1ecd57fc6532da"
 
@@ -4736,10 +4714,6 @@ spdx-license-ids@^1.0.2:
 sprintf-js@~1.0.2:
   version "1.0.3"
   resolved "https://registry.yarnpkg.com/sprintf-js/-/sprintf-js-1.0.3.tgz#04e6926f662895354f3dd015203633b857297e2c"
-
-sri-toolbox@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/sri-toolbox/-/sri-toolbox-0.2.0.tgz#a7fea5c3fde55e675cf1c8c06f3ebb5c2935835e"
 
 sshpk@^1.7.0:
   version "1.10.1"
@@ -5152,7 +5126,7 @@ walk-sync@^0.1.3:
   version "0.1.3"
   resolved "https://registry.yarnpkg.com/walk-sync/-/walk-sync-0.1.3.tgz#8a07261a00bda6cfb1be25e9f100fad57546f583"
 
-walk-sync@^0.2.5, walk-sync@^0.2.6, walk-sync@^0.2.7:
+walk-sync@^0.2.5, walk-sync@^0.2.7:
   version "0.2.7"
   resolved "https://registry.yarnpkg.com/walk-sync/-/walk-sync-0.2.7.tgz#b49be4ee6867657aeb736978b56a29d10fa39969"
   dependencies:

@@ -1,32 +1,39 @@
 import JSONAPISerializer from 'ember-data/serializers/json-api';
+import { shouldPassthrough } from '../-private/passthrough';
+import { groupBy } from 'lodash';
 
 export default JSONAPISerializer.extend({
-  modelNameFromPayloadKey(key) {
-    return key;
-  },
+  normalizeResponse(store, type, payload) {
+    if (shouldPassthrough(payload)) {
+      this.applyTransformsToAttributes(type, payload.data);
 
-  payloadKeyFromModelName(modelName) {
-    return modelName;
-  },
+      let included = groupBy(payload.included || [], 'type');
+      for (let modelName in included) {
+        this.applyTransformsToAttributes(store.modelFor(modelName), included[modelName]);
+      }
 
-  modelNameFromPayloadType(type) {
-    return type;
-  },
-
-  payloadTypeFromModelName(modelName) {
-    return modelName;
-  },
-
-  _shouldSerializeHasMany(snapshot, key, relationship) {
-    const relationshipType = snapshot.type.determineRelationshipType(relationship, this.store);
-
-    if (this._mustSerialize(key)) {
-      return true;
+      return payload;
     }
 
-    return this._canSerialize(key) &&
-      (relationshipType === 'manyToNone' ||
-        relationshipType === 'manyToMany' ||
-        relationshipType === 'manyToOne');
+    return this._super(...arguments);
+  },
+
+  applyTransformsToAttributes(type, data) {
+    if (!Array.isArray(data)) { data = [data]; }
+
+    for (let datum of data) {
+      this.applyTransforms(type, datum.attributes);
+    }
+  },
+
+  serializeAttributesValues(type, data) {
+    if (!Array.isArray(data)) { data = [data]; }
+
+    for (let datum of data) {
+      type.eachAttribute((key, attribute) => {
+        datum.attributes[key] = this.transformFor(attribute.type)
+          .serialize(datum.attributes[key], attribute.options);
+      });
+    }
   }
 });
