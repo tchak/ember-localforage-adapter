@@ -215,8 +215,11 @@ export default JSONAPIAdapter.extend({
 
     if (!payload && this.shouldNetworkReloadRecord(type, id)) {
       payload = await this.networkFindRecord(...arguments);
-      payload = this.normalizeResponse(store, type, payload, id, 'findRecord')
-      await this.savePayload(store, payload);
+
+      if (!isFastBoot) {
+        payload = this.normalizeResponse(store, type, payload, id, 'findRecord')
+        await this.savePayload(store, payload);
+      }
     }
 
     if (!payload) { throw new NotFoundError(); }
@@ -229,8 +232,11 @@ export default JSONAPIAdapter.extend({
 
     if (!payload && this.shouldNetworkReloadAll(type)) {
       payload = await this.networkFindAll(...arguments);
-      payload = this.normalizeResponse(store, type, payload, null, 'findAll');
-      await this.savePayload(store, payload);
+
+      if (!isFastBoot) {
+        payload = this.normalizeResponse(store, type, payload, null, 'findAll');
+        await this.savePayload(store, payload);
+      }
     }
 
     if (!payload) {
@@ -245,8 +251,11 @@ export default JSONAPIAdapter.extend({
 
     if (!payload && this.shouldNetworkFindMany(type, ids)) {
       payload = await this.networkFindMany(...arguments);
-      payload = this.normalizeResponse(store, type, payload, null, 'findMany');
-      await this.savePayload(store, payload);
+
+      if (!isFastBoot) {
+        payload = this.normalizeResponse(store, type, payload, null, 'findMany');
+        await this.savePayload(store, payload);
+      }
     }
 
     if (!payload) {
@@ -261,8 +270,11 @@ export default JSONAPIAdapter.extend({
 
     if (!payload && this.shouldNetworkQueryRecord(type, query)) {
       payload = await this.networkQueryRecord(...arguments);
-      payload = this.normalizeResponse(store, type, payload, null, 'queryRecord');
-      await this.savePayload(store, payload);
+
+      if (!isFastBoot) {
+        payload = this.normalizeResponse(store, type, payload, null, 'queryRecord');
+        await this.savePayload(store, payload);
+      }
     }
 
     if (!payload) { throw new NotFoundError(); }
@@ -275,8 +287,11 @@ export default JSONAPIAdapter.extend({
 
     if (!payload && this.shouldNetworkQuery(type, query)) {
       payload = await this.networkQuery(...arguments);
-      payload = this.normalizeResponse(store, type, payload, null, 'query');
-      await this.savePayload(store, payload);
+
+      if (!isFastBoot) {
+        payload = this.normalizeResponse(store, type, payload, null, 'query');
+        await this.savePayload(store, payload);
+      }
     }
 
     if (!payload) {
