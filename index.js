@@ -11,12 +11,6 @@ module.exports = {
           path: 'dist/localforage.js',
           using: [{ transformation: 'amd', as: 'localforage' }]
         }]
-      },
-      'node-uuid': {
-        import: [{
-          path: 'uuid.js',
-          using: [{ transformation: 'amd', as: 'uuid' }]
-        }]
       }
     }
   }

@@ -2,7 +2,7 @@ import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
 import { cloneDeep as clone, groupBy } from 'lodash';
 import localforage, { STORE_NAME } from '../localforage';
-import uuid from 'uuid';
+import uuid from '../-private/uuid';
 import Queue from '../-private/queue';
 import Error from '../-private/error';
 import { passthrough } from '../-private/passthrough';
