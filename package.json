@@ -22,7 +22,6 @@
   "dependencies": {
     "ember-cli-babel": "^5.1.7",
     "ember-cli-node-assets": "^0.1.6",
-    "ember-lodash": "^4.17.0",
     "localforage": "^1.4.3"
   },
   "devDependencies": {

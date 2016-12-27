@@ -3,13 +3,12 @@ import { moduleFor, test } from 'ember-qunit';
 import FIXTURES from '../helpers/fixtures/crud';
 import loadFixtures from '../helpers/load-fixtures';
 import { offLine } from '../helpers/on-line';
+import { isPojo } from 'ember-offline-adapter/-utils';
 
 var store;
 var adapter;
 
 const { run, get } = Ember;
-const proto = Object.prototype;
-const gpo = Object.getPrototypeOf;
 
 moduleFor('service:store', "Cache", {
   integration: true,
@@ -23,18 +22,6 @@ moduleFor('service:store', "Cache", {
     await loadFixtures(FIXTURES);
   }
 });
-
-/**
- * @credits https://github.com/nickb1080/is-pojo
- * @param obj
- * @returns {boolean}
- */
-function isPojo(obj) {
-  if (obj === null || typeof obj !== "object") {
-    return false;
-  }
-  return gpo(obj) === proto;
-}
 
 test("cache should be unbound data", async function(assert) {
   assert.expect(13);

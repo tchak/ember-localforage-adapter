@@ -1,4 +1,4 @@
-export function toJSON(snapshot) {
+export default function(snapshot) {
   let serializer = snapshot.record.store
     .serializerFor(snapshot.modelName);
 
@@ -9,7 +9,7 @@ export function toJSON(snapshot) {
     relationships: {}
   };
 
-  serializer.serializeAttributesValues(snapshot.type, data);
+  serializer.serializeDataAttributes(snapshot.type, data);
 
   snapshot.eachRelationship((key, { type, kind }) => {
     data.relationships[key] = {};

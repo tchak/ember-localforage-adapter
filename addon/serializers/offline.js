@@ -1,15 +1,15 @@
 import JSONAPISerializer from 'ember-data/serializers/json-api';
-import { shouldPassthrough } from '../-private/passthrough';
-import { groupBy } from 'lodash';
+
+import { shouldPassthrough, groupBy } from '../-utils';
 
 export default JSONAPISerializer.extend({
   normalizeResponse(store, type, payload) {
     if (shouldPassthrough(payload)) {
-      this.applyTransformsToAttributes(type, payload.data);
+      this.deserializeDataAttributes(type, payload.data);
 
       let included = groupBy(payload.included || [], 'type');
       for (let modelName in included) {
-        this.applyTransformsToAttributes(store.modelFor(modelName), included[modelName]);
+        this.deserializeDataAttributes(store.modelFor(modelName), included[modelName]);
       }
 
       return payload;
@@ -18,7 +18,7 @@ export default JSONAPISerializer.extend({
     return this._super(...arguments);
   },
 
-  applyTransformsToAttributes(type, data) {
+  deserializeDataAttributes(type, data) {
     if (!Array.isArray(data)) { data = [data]; }
 
     for (let datum of data) {
@@ -26,7 +26,7 @@ export default JSONAPISerializer.extend({
     }
   },
 
-  serializeAttributesValues(type, data) {
+  serializeDataAttributes(type, data) {
     if (!Array.isArray(data)) { data = [data]; }
 
     for (let datum of data) {

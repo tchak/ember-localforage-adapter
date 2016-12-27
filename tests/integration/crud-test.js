@@ -1,6 +1,6 @@
 import Ember from 'ember';
 import { moduleFor, test } from 'ember-qunit';
-import uuid from 'ember-offline-adapter/-private/uuid';
+import { uuid } from 'ember-offline-adapter/-utils';
 import FIXTURES from '../helpers/fixtures/crud';
 import MOCK_FIXTURES from '../helpers/fixtures/mock';
 import loadFixtures from '../helpers/load-fixtures';

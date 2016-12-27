@@ -1,4 +1,4 @@
-import { toJSON } from 'ember-offline-adapter/-private/snapshot';
+import serialize from 'ember-offline-adapter/serialize-store';
 import { STORE_NAME } from 'ember-offline-adapter/localforage';
 
 export function initialize(instance) {
@@ -8,25 +8,10 @@ export function initialize(instance) {
   if (fastboot) {
     fastboot.get('shoebox').put(STORE_NAME, {
       get cache() {
-        return Object.keys(store.typeMaps).map(k => {
-          let { modelName } = store.typeMaps[k].type;
-          return [modelName, peekAll(store, modelName)];
-        }).reduce((hash, [modelName, records]) => {
-          hash[modelName] = records.reduce((hash, record) => {
-            let snapshot = record._createSnapshot();
-            hash[snapshot.id] = toJSON(snapshot);
-            return hash;
-          }, {});
-          return hash;
-        }, {});
+        return serialize(store);
       }
     });
   }
-}
-
-function peekAll(store, modelName) {
-  return store.peekAll(modelName).toArray()
-    .filter(record => !(record.get('isDeleted') || record.get('isNew')));
 }
 
 export default {

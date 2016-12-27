@@ -1,12 +1,11 @@
 import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
-import { cloneDeep as clone, groupBy } from 'lodash';
+
 import localforage, { STORE_NAME } from '../localforage';
-import uuid from '../-private/uuid';
-import Queue from '../-private/queue';
-import Error from '../-private/error';
-import { passthrough } from '../-private/passthrough';
-import { toJSON } from '../-private/snapshot';
+import serialize from '../serialize-snapshot';
+import { passthrough, clone, groupBy, uuid } from '../-utils';
+import Queue from '../-queue';
+import Error from '../-error';
 
 const { computed, RSVP } = Ember;
 
@@ -183,17 +182,25 @@ export default JSONAPIAdapter.extend({
   },
 
   localCreateRecord(store, snapshot) {
-    let payload = toJSON(snapshot);
+    let payload = serialize(snapshot);
 
-    if (isFastBoot) { return RSVP.resolve(passthrough({ data: payload })); }
+    if (isFastBoot) {
+      payload = passthrough({ data: payload });
+
+      return RSVP.resolve(payload);
+    }
 
     return this.save(snapshot.modelName, [payload]);
   },
 
   localUpdateRecord(store, snapshot) {
-    let payload = toJSON(snapshot);
+    let payload = serialize(snapshot);
 
-    if (isFastBoot) { return RSVP.resolve(passthrough({ data: payload })); }
+    if (isFastBoot) {
+      payload = passthrough({ data: payload });
+
+      return RSVP.resolve(payload);
+    }
 
     return this.save(snapshot.modelName, [payload]);
   },
@@ -201,13 +208,13 @@ export default JSONAPIAdapter.extend({
   localDeleteRecord(store, snapshot) {
     if (isFastBoot) { return RSVP.resolve(); }
 
-    return this.save(snapshot.modelName, [
-      {
-        id: snapshot.id,
-        type: snapshot.modelName,
-        meta: { deleted: true }
-      }
-    ]);
+    let payload = {
+      id: snapshot.id,
+      type: snapshot.modelName,
+      meta: { deleted: true }
+    };
+
+    return this.save(snapshot.modelName, [payload]);
   },
 
   async findRecord(store, type, id) {
@@ -392,11 +399,11 @@ export default JSONAPIAdapter.extend({
 
     payload = serializer.normalizeResponse(store, type, payload, id, requestType);
 
-    serializer.serializeAttributesValues(type, payload.data);
+    serializer.serializeDataAttributes(type, payload.data);
 
     let included = groupBy(payload.included || [], 'type');
     for (let modelName in included) {
-      this.serializeAttributesValues(store.modelFor(modelName), included[modelName]);
+      this.serializeDataAttributes(store.modelFor(modelName), included[modelName]);
     }
 
     return passthrough(payload);
@@ -420,10 +427,7 @@ export default JSONAPIAdapter.extend({
 
     data = groupBy(data, 'type');
 
-    //let serializer;
     for (let modelName in data) {
-      //serializer = serializer || store.serializerFor(modelName);
-      //serializer.serializeAttributesValues(store.modelFor(modelName), data[modelName]);
       await this.save(modelName, data[modelName]);
     }
   },
