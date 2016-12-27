@@ -1,1 +1,1 @@
-export { Serializer as default } from 'ember-offline-adapter';
+export { default } from 'ember-offline-adapter/serializer';

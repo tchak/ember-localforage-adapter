@@ -3,7 +3,6 @@ import { moduleFor, test } from 'ember-qunit';
 import FIXTURES from '../helpers/fixtures/crud';
 import loadFixtures from '../helpers/load-fixtures';
 import { offLine } from '../helpers/on-line';
-import { isPojo } from 'ember-offline-adapter/-utils';
 
 var store;
 var adapter;
@@ -43,18 +42,18 @@ test("cache should be unbound data", async function(assert) {
   assert.equal(get(thirdRecord, 'day'), 3, "Third item's day is 3");
 
   listCache = adapter.get('cache').get('list');
-  assert.equal(isPojo(listCache), true, 'should have cache');
+  assert.ok(listCache, true, 'should have cache');
   assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'one');
 
   run(() => firstRecord.set('name', 'two'));
 
   listCache = adapter.get('cache').get('list');
-  assert.equal(isPojo(listCache), true);
+  assert.ok(listCache, true, 'should have cache');
   assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'one');
 
   await run(() => firstRecord.save());
 
   listCache = adapter.get('cache').get('list');
-  assert.equal(isPojo(listCache), true);
+  assert.ok(listCache, true, 'should have cache');
   assert.equal(listCache[get(firstRecord, 'id')].attributes.name, 'two');
 });

@@ -1,14 +1,21 @@
 import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
 
-import localforage, { STORE_NAME } from './localforage';
-import { passthrough, clone, groupBy, uuid } from './-utils';
+import storage, { STORE_NAME } from './-storage';
+import {
+  passthrough,
+  clone,
+  groupBy,
+  uuid,
+  isFastBoot
+} from './-utils';
 import Queue from './-queue';
 import Error from './-error';
 
-const { computed, RSVP } = Ember;
+import './-snapshot';
+import './-store';
 
-const isFastBoot = typeof FastBoot !== 'undefined';
+const { computed, RSVP } = Ember;
 
 const {
   findRecord: networkFindRecord,
@@ -456,7 +463,7 @@ export default JSONAPIAdapter.extend({
    * @private
    */
   localforage: computed(function() {
-    return localforage(this.get('namespace'));
+    return storage(this.get('namespace'));
   }),
 
   /**
@@ -466,7 +473,7 @@ export default JSONAPIAdapter.extend({
     let shoebox = this.get('fastboot.shoebox');
 
     if (shoebox) {
-      return (shoebox.retrieve(STORE_NAME) || {}).records;
+      return (shoebox.retrieve(STORE_NAME) || {}).cache;
     }
   }),
 

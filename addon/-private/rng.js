@@ -1,5 +1,5 @@
 /* global FastBoot */
-const isFastBoot = typeof FastBoot !== 'undefined';
+import { isFastBoot } from '../-utils';
 
 var rng;
 
