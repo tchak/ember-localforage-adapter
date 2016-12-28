@@ -2,8 +2,8 @@ import JSONAPISerializer from 'ember-data/serializers/json-api';
 
 import { shouldPassthrough, groupBy } from './-utils';
 
-export default JSONAPISerializer.extend({
-  normalizeResponse(store, type, payload) {
+function wrapNormalizeResponse(normalizeResponse) {
+  return function(store, type, payload) {
     if (shouldPassthrough(payload)) {
       this.deserializeDataAttributes(type, payload.data);
 
@@ -15,7 +15,14 @@ export default JSONAPISerializer.extend({
       return payload;
     }
 
-    return this._super(...arguments);
+    return normalizeResponse.apply(this, arguments);
+  };
+}
+
+export default JSONAPISerializer.extend({
+  init() {
+    this._super();
+    this.normalizeResponse = wrapNormalizeResponse(this.normalizeResponse);
   },
 
   deserializeDataAttributes(type, data) {
