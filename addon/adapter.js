@@ -12,9 +12,6 @@ import {
 import Queue from './-queue';
 import Error from './-error';
 
-import './-snapshot';
-import './-store';
-
 const { computed, RSVP } = Ember;
 
 const {

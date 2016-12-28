@@ -1,4 +1,4 @@
-import Store from 'ember-data/store';
+import Store from 'ember-data/-private/system/store';
 
 Store.reopen({
   dump() {
