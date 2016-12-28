@@ -532,13 +532,15 @@ export default JSONAPIAdapter.extend({
     }
 
     let data = await this.readFromLocalStorage(modelName);
-    let didChange = dropExpired(data, expireIn);
     let cache = this.get(`shoebox.${modelName}`);
+    let didChange = false;
 
     if (cache) {
-      didChange = didChange || dropExpired(cache, expireIn);
+      didChange = true;
       Object.assign(data, cache);
     }
+
+    didChange = dropExpired(data, expireIn) || didChange;
 
     if (didChange) {
       await this.writeToLocalStorage(modelName, data);
