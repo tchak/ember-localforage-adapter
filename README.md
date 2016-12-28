@@ -26,7 +26,7 @@ Initialize the adapter.
 
 ```js
 //app/adapters/application.js
-export { default } from 'ember-offline-adapter';
+export { default } from 'ember-offline-adapter/adapter';
 ```
 
 ### Localforage Namespace
@@ -35,7 +35,7 @@ All of your application data lives on a single `localforage` key, it defaults to
 
 ```js
 //app/adapters/user.js
-import OfflineAdapter from 'ember-offline-adapter';
+import OfflineAdapter from 'ember-offline-adapter/adapter';
 
 export default OfflineAdapter.extend({
   namespace: 'v1.0'
@@ -47,7 +47,7 @@ export default OfflineAdapter.extend({
 In order to reduce the number of getItem calls to localforage, the adapter will use a caching mechanism. To disable it, set caching to false.
 
 ```js
-import OfflineAdapter from 'ember-offline-adapter';
+import OfflineAdapter from 'ember-offline-adapter/adapter';
 
 export default OfflineAdapter.extend({
   caching: false
