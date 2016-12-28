@@ -25,6 +25,15 @@ export default JSONAPISerializer.extend({
     this.normalizeResponse = wrapNormalizeResponse(this.normalizeResponse);
   },
 
+  unapplyTransforms(type, attributes) {
+    type.eachAttribute((key, { type, options }) => {
+      if (type) {
+        let transform = this.transformFor(type);
+        attributes[key] = transform.serialize(attributes[key], options);
+      }
+    });
+  },
+
   deserializeDataAttributes(type, data) {
     if (!Array.isArray(data)) { data = [data]; }
 
@@ -37,10 +46,7 @@ export default JSONAPISerializer.extend({
     if (!Array.isArray(data)) { data = [data]; }
 
     for (let datum of data) {
-      type.eachAttribute((key, attribute) => {
-        datum.attributes[key] = this.transformFor(attribute.type)
-          .serialize(datum.attributes[key], attribute.options);
-      });
+      this.unapplyTransforms(type, datum.attributes);
     }
   }
 });
