@@ -8,7 +8,8 @@ Snapshot.prototype.dump = function() {
     type: this.modelName,
     id: this.id,
     attributes: this.attributes(),
-    relationships: {}
+    relationships: {},
+    meta: { ts: Date.now() }
   };
 
   serializer.serializeDataAttributes(this.type, data);

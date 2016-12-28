@@ -316,25 +316,47 @@ export default JSONAPIAdapter.extend({
 
   async createRecord(store, type, snapshot) {
     try {
+      let payload = null;
+
       if (this.shouldNetworkCreateRecord(type, snapshot.id)) {
-        await this.networkCreateRecord(...arguments);
+        payload = await this.networkCreateRecord(...arguments);
       }
-    } finally {
-      /* eslint-disable no-unsafe-finally */
+
+      if (!isFastBoot) {
+        if (payload) {
+          payload = this.normalizeResponse(store, type, payload, null, 'createRecord');
+          await this.savePayload(store, payload);
+        } else {
+          await this.localCreateRecord(store, snapshot);
+        }
+      }
+
+      return payload;
+    } catch(e) {
       return this.localCreateRecord(store, snapshot);
-      /* eslint-enable no-unsafe-finally */
     }
   },
 
   async updateRecord(store, type, snapshot) {
     try {
+      let payload = null;
+
       if (this.shouldNetworkUpdateRecord(type, snapshot.id)) {
-        await this.networkUpdateRecord(...arguments);
+        payload = await this.networkUpdateRecord(...arguments);
       }
-    } finally {
-      /* eslint-disable no-unsafe-finally */
+
+      if (!isFastBoot) {
+        if (payload) {
+          payload = this.normalizeResponse(store, type, payload, null, 'updateRecord');
+          await this.savePayload(store, payload);
+        } else {
+          await this.localUpdateRecord(store, snapshot);
+        }
+      }
+
+      return payload;
+    } catch(e) {
       return this.localUpdateRecord(store, snapshot);
-      /* eslint-enable no-unsafe-finally */
     }
   },
 
@@ -343,10 +365,14 @@ export default JSONAPIAdapter.extend({
       if (this.shouldNetworkDeleteRecord(type, snapshot.id)) {
         await this.networkDeleteRecord(...arguments);
       }
-    } finally {
-      /* eslint-disable no-unsafe-finally */
+
+      if (!isFastBoot) {
+        await this.localDeleteRecord(store, snapshot);
+      }
+
+      return null;
+    } catch(e) {
       return this.localDeleteRecord(store, snapshot);
-      /* eslint-enable no-unsafe-finally */
     }
   },
 
@@ -450,6 +476,8 @@ export default JSONAPIAdapter.extend({
           delete cache[datum.id];
         } else {
           cache[datum.id] = datum;
+          datum.meta = datum.meta || {};
+          datum.meta.ts = Date.now();
         }
       }
 
@@ -492,19 +520,30 @@ export default JSONAPIAdapter.extend({
    * @private
    */
   async getData(modelName) {
+    let expireIn = this.get('expireIn');
+
     if (this.caching) {
       let cache = this.cache.get(modelName);
 
       if (cache) {
+        if (dropExpired(cache, expireIn)) {
+          await this.writeToLocalStorage(modelName, cache);
+        }
+
         return clone(cache);
       }
     }
 
     let data = await this.readFromLocalStorage(modelName);
+    let didChange = dropExpired(data, expireIn);
     let cache = this.get(`shoebox.${modelName}`);
 
     if (cache) {
+      didChange = didChange || dropExpired(cache, expireIn);
       Object.assign(data, cache);
+    }
+
+    if (didChange) {
       await this.writeToLocalStorage(modelName, data);
     }
 
@@ -530,3 +569,23 @@ export default JSONAPIAdapter.extend({
   }
 });
 
+function dropExpired(data, expireIn) {
+  if (!expireIn) { return false; }
+
+  let didChange = false;
+
+  Object.keys(data).forEach((id) => {
+    if (data[id].meta && data[id].meta.ts) {
+      if (isExpired(expireIn, new Date(data[id].meta.ts))) {
+        didChange = true;
+        delete data[id];
+      }
+    }
+  });
+
+  return didChange;
+}
+
+function isExpired(expireIn, ts) {
+  return (Date.now() / 1000) >= ((ts / 1000) + expireIn);
+}

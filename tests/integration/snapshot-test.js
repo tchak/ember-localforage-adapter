@@ -26,11 +26,15 @@ test('toJSON', async function(assert) {
 
   let data = post._createSnapshot().dump();
 
-  assert.deepEqual(data, FIXTURES.post.p1);
+  assert.deepEqual(data, Object.assign({
+    meta: { ts: data.meta.ts }
+  }, FIXTURES.post.p1));
 
   assert.equal(list.get('day'), 1);
   data = list._createSnapshot().dump();
   assert.equal(data.attributes.day, 24);
 
-  assert.deepEqual(data, FIXTURES.list.l1);
+  assert.deepEqual(data, Object.assign({
+    meta: { ts: data.meta.ts }
+  }, FIXTURES.list.l1));
 });
