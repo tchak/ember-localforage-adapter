@@ -1,6 +1,6 @@
 {
   "name": "ember-offline-adapter",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Store your ember application data in Mozilla's localforage.",
   "keywords": [
     "ember-addon",
