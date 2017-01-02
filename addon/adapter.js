@@ -432,7 +432,7 @@ export default JSONAPIAdapter.extend({
 
     let included = groupBy(payload.included || [], 'type');
     for (let modelName in included) {
-      this.serializeDataAttributes(store.modelFor(modelName), included[modelName]);
+      serializer.serializeDataAttributes(store.modelFor(modelName), included[modelName]);
     }
 
     return passthrough(payload);
