@@ -27,3 +27,12 @@ export function groupBy(array, key) {
   }
   return hash;
 }
+
+export function compact(obj) {
+  for (let key in obj) {
+    if (!obj[key]) {
+      delete obj[key];
+    }
+  }
+  return obj;
+}

@@ -1,7 +1,7 @@
 import Ember from 'ember';
 import JSONAPIAdapter from 'ember-data/adapters/json-api';
+import localforage from './localforage';
 
-import storage, { STORE_NAME } from './-storage';
 import {
   passthrough,
   clone,
@@ -487,8 +487,14 @@ export default JSONAPIAdapter.extend({
   /**
    * @private
    */
-  localforage: computed(function() {
-    return storage(this.get('namespace'));
+  localforage: computed('namespace', 'driver', 'version', function() {
+    let {
+      namespace: name,
+      driver,
+      version
+    } = this.getProperties('namespace', 'driver', 'version');
+
+    return localforage({ name, driver, version });
   }),
 
   /**
@@ -498,7 +504,7 @@ export default JSONAPIAdapter.extend({
     let shoebox = this.get('fastboot.shoebox');
 
     if (shoebox) {
-      return (shoebox.retrieve(STORE_NAME) || {}).cache;
+      return (shoebox.retrieve('ember-data-store') || {}).cache;
     }
   }),
 
