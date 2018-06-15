@@ -9,6 +9,7 @@
 /bower_components
 
 # misc
+/yarn-error.log
 /.sass-cache
 /connect.lock
 /coverage/*
